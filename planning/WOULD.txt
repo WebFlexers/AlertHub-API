@@ -1,0 +1,59 @@
+-----------------------------------------------------------------------------------------------------------------------------------------------
+W - Walk Through It
+
+We will create a web api for an application that instantly notifies users about urgent and dangerous events, like natural disasters.
+Specifically the app must be able to notify registered users and civil protection employees about floods, wildfires, earthquakes, 
+cyclones, hailstorms and tornados. 
+
+The format of the notification must include:
+a) The type of disaster, along with any relevant information (e.g. that explains what a hailstorm is and why it's dangerous)
+b) The geolocation of the disaster
+c) A timestamp with date and time
+d) Directions from civil protection
+
+* The notification will be a written message.
+* Registered users will be able to report a disaster. The report will contain the following:
+	a) The user identifier (So we can find the user in the database and get their info)
+	b) The disaster type
+	c) The current location of the user
+	d) The timestamp (date and time)
+	e) Optionally: A photo of the disaster
+	f) Optionally: A comment about the disaster
+* Civil protection employees will be able to examine and validate or refuse the reports guided by the danger level index,
+which will be calculated by this backend system. They can either opt for automatic notification of users by the system, whose last known location is 
+within a small radius around the reported disaster, or further analyze the report and modify the notification and/or the radius before sending it.
+
+The ranking (or danger level index) of the reports will be calculated with 2 considerations
+a) The number of users that have reported the same disaster (the more reports the more valid)
+   in a specific timeframe (for example: reports about a flood don't count if more than 1 day has passed)
+b) The geographic distance between the reports (for example: reports about a wildfire can't be more than 200km apart)
+
+-----------------------------------------------------------------------------------------------------------------------------------------------
+O - Open up the requirements
+
+* Visual Studio
+* .NET Web Api
+* Azure CosmosDB for storing location and reports
+* Azure Active Directory B2C for authentication and user information
+* Azure storage for storing images
+* Optionally: Azure CDN to cache the images and reduce the load time
+* Twillio for SMS
+
+U - User Interface design
+This is not relevant in a web api
+
+L - Logic
+* For user authentication we will use Azure Active Directory B2C that will support user registration through our server and also google
+* For saving the reports we will use the Web Api as the interface and Cosmos DB to save the data
+* Every new report will have a status of pending. The employee can mark it as either valid or invalid
+* When a report is marked as valid and the employee finishes with any potential modification, an azure function will be called
+that will access cosmos db and find all the users within the specified radius of the disaster and send an sms, using Twillio to all of them
+
+D - Database Design
+Coming soon...
+
+
+
+
+
+
