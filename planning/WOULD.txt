@@ -43,17 +43,26 @@ U - User Interface design
 This is not relevant in a web api
 
 L - Logic
-* For user authentication we will use Azure Active Directory B2C that will support user registration through our server and also google
-* For saving the reports we will use the Web Api as the interface and Cosmos DB to save the data
+* For user authentication we will use Local Identity with entity framework
+* For saving the reports we will use the Web Api as the interface and Microsoft SQL Server with entity framework
 * Every new report will have a status of pending. The employee can mark it as either valid or invalid
 * When a report is marked as valid and the employee finishes with any potential modification, an azure function will be called
 that will access cosmos db and find all the users within the specified radius of the disaster and send an sms, using Twillio to all of them
 
 D - Database Design
-Coming soon...
+
+User: UserId, Email, username, password
+
+DangerReport: Id, DisasterType, Longitude, Latitude, DateTime, Comment, photo
+(The photo will be received as an IFormFile )
 
 
 
-
+	a) The user identifier (So we can find the user in the database and get their info)
+	b) The disaster type
+	c) The current location of the user
+	d) The timestamp (date and time)
+	e) Optionally: A photo of the disaster
+	f) Optionally: A comment about the disaster
 
 
