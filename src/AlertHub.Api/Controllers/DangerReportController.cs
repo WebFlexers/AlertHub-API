@@ -1,12 +1,15 @@
-﻿using AlertHub.Data;
+﻿using AlertHub.Api.Extensions;
+using AlertHub.Data;
 using AlertHub.Data.DTOs;
 using AlertHub.Data.Entities;
 using AlertHub.Data.Entities.Enums;
 using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using NetTopologySuite;
 using NetTopologySuite.Geometries;
+using System.Composition;
 
 namespace AlertHub.Api.Controllers;
 [Route("api/[controller]")]
@@ -27,7 +30,6 @@ public class DangerReportController : ControllerBase
         _environment = environment;
     }
 
-    [Authorize]
     [HttpPost]
     public async Task<ActionResult> Post([FromForm]CreateDangerReportDTO dangerReport, CancellationToken cancellationToken)
     {
@@ -43,14 +45,14 @@ public class DangerReportController : ControllerBase
                 return BadRequest(new { errors = errorsByProperty });
             }
 
-            var disasterType = Enum.Parse<DisasterType>(dangerReport.DisasterType);
-
             var geometryFactory = NtsGeometryServices.Instance.CreateGeometryFactory(srid: 4326);
+
+            var disasterType = Enum.Parse<DisasterType>(dangerReport.DisasterType);
             var longitude = double.Parse(dangerReport.Longitude);
             var latitude = double.Parse(dangerReport.Latitude);
             var location = geometryFactory.CreatePoint(new Coordinate(longitude, latitude))!;
             var nowUtc = DateTime.UtcNow;
-            string imageName = null;
+            string? imageName = null;
 
             if (dangerReport.ImageFile is not null)
             {
@@ -84,20 +86,60 @@ public class DangerReportController : ControllerBase
                     Directory.CreateDirectory(imagesPath);
                 }
 
-                await using(FileStream fileStream = System.IO.File.Create(Path.Combine(imagesPath, imageName))) {
-                    await dangerReport.ImageFile.CopyToAsync(fileStream);
-                    await fileStream.FlushAsync();
-                }
+                await using FileStream fileStream = System.IO.File.Create(Path.Combine(imagesPath, imageName!));
+                await dangerReport.ImageFile.CopyToAsync(fileStream, cancellationToken);
+                await fileStream.FlushAsync(CancellationToken.None);
+                _logger.LogInformation("Successfully uploaded image {imageName}", imageName);
             }
 
             await _dbContext.Database.CommitTransactionAsync(cancellationToken);
+            _logger.LogInformation("Successfully created danger report by user: {userid}", newDangerReport.UserId);
 
             return Ok();
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "An exception was thrown while trying to create a danger report");
-            await _dbContext.Database.RollbackTransactionAsync();
+            await _dbContext.Database.RollbackTransactionAsync(CancellationToken.None);
+            return BadRequest();
+        }
+    }
+
+    [HttpGet("GetByTimeDescending/{pageNumber}/{itemsPerPage}")]
+    public async Task<ActionResult<List<DangerReport>>> Get(int pageNumber, int itemsPerPage)
+    {
+        try
+        {
+            string rootPath = $"{Request.Scheme}://{Request.Host}{Request.PathBase}";
+            var imagesPath = $@"{rootPath}/UploadDangerReportImages";
+
+            var reports = await _dbContext.DangerReports
+                .AsNoTracking()
+                .OrderByDescending(report => report.CreatedAt)
+                .Paginate(pageNumber, itemsPerPage)
+                .Select(report => new DangerReportDTO
+                {
+                    Id = report.Id,
+                    DisasterType = report.DisasterType,
+                    Longitude = report.Location.X,
+                    Latitude = report.Location.Y,
+                    CreatedAt = report.CreatedAt,
+                    ImageUrl = report.ImageName != null ? 
+                        $@"{imagesPath}/{report.ImageName}" : 
+                        null,
+                    Description = report.Description,
+                    Status = report.Status,
+                    Culture = report.Culture,
+                    UserId = report.UserId,
+                })
+                .ToListAsync();
+
+            return Ok(reports);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "An exception occurred while fetching paginated " +
+                                 "danger reports sorted by time descending");
             return BadRequest();
         }
     }

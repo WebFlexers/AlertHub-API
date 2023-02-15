@@ -8,5 +8,5 @@ public enum DisasterType
     Cyclone,
     Hailstorm,
     Tornado,
-    Other
+    Other,
 }
