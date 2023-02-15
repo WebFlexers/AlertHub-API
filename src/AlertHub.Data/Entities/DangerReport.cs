@@ -10,7 +10,7 @@ public class DangerReport
     public DisasterType DisasterType { get; set; }
     public Point Location { get; set; }
     public DateTime CreatedAt { get; set; }
-    public string PhotoName { get; set; }
+    public string ImageName { get; set; }
     public string Description { get; set; }
     public ReportStatus Status { get; set; }
     public string Culture { get; set; }

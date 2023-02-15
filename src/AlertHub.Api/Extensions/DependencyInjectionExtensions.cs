@@ -1,9 +1,11 @@
 ﻿using System.Text;
 using System.Text.Json.Serialization;
 using AlertHub.Data;
+using AlertHub.Data.DTOs;
 using AlertHub.Data.DTOs.Auth;
 using AlertHub.Data.Validation;
 using FluentValidation;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
@@ -76,7 +78,8 @@ public static class DependencyInjectionExtensions
                 options.Password.RequireLowercase = true;
                 options.User.RequireUniqueEmail = true;
             })
-            .AddEntityFrameworkStores<ApplicationDbContext>();
+            .AddEntityFrameworkStores<ApplicationDbContext>()
+            .AddDefaultTokenProviders();;
 
         builder.Services.AddAuthorization(opts =>
         {
@@ -85,7 +88,12 @@ public static class DependencyInjectionExtensions
                 .Build();
         });
 
-        builder.Services.AddAuthentication("Bearer")
+        builder.Services.AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+            })
             .AddJwtBearer(opts =>
             {
                 opts.TokenValidationParameters = new()
@@ -105,5 +113,6 @@ public static class DependencyInjectionExtensions
     public static void AddCustomServices(this WebApplicationBuilder builder)
     {
         builder.Services.AddScoped<IValidator<RegisterAccountDataDTO>, RegisterAccountDataDTOValidator>();
+        builder.Services.AddScoped<IValidator<CreateDangerReportDTO>, CreateDangerReportDTOValidator>();
     }
 }

@@ -18,7 +18,7 @@ public class DangerReportConfig : IEntityTypeConfiguration<DangerReport>
         builder.Property(dr => dr.DisasterType)
             .IsRequired(true);
 
-        builder.Property(dr => dr.PhotoName)
+        builder.Property(dr => dr.ImageName)
             .IsRequired(false);
 
         builder.Property(dr => dr.Description)

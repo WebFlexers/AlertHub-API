@@ -39,7 +39,7 @@ namespace AlertHub.Data.Migrations
                     DisasterType = table.Column<int>(type: "int", nullable: false),
                     Location = table.Column<Point>(type: "geography", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    PhotoName = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    ImageName = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     Description = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: true),
                     Status = table.Column<int>(type: "int", nullable: false),
                     Culture = table.Column<string>(type: "nvarchar(5)", maxLength: 5, nullable: false),
@@ -101,8 +101,8 @@ namespace AlertHub.Data.Migrations
                 columns: new[] { "Id", "ConcurrencyStamp", "Name", "NormalizedName" },
                 values: new object[,]
                 {
-                    { "02907f69-ce13-4691-8b03-c08f2e2efebd", null, "Civil_Protection", "CIVIL_PROTECTION" },
-                    { "0a4907eb-729e-419c-ae14-82100436a93e", null, "Simple_User", "SIMPLE_USER" }
+                    { "37b822b9-4d38-4e18-ac81-1483319cb441", null, "Civil_Protection", "CIVIL_PROTECTION" },
+                    { "e763297c-78bd-47c5-911a-63828d80b126", null, "Simple_User", "SIMPLE_USER" }
                 });
 
             migrationBuilder.CreateIndex(
@@ -139,12 +139,12 @@ namespace AlertHub.Data.Migrations
             migrationBuilder.DeleteData(
                 table: "AspNetRoles",
                 keyColumn: "Id",
-                keyValue: "02907f69-ce13-4691-8b03-c08f2e2efebd");
+                keyValue: "37b822b9-4d38-4e18-ac81-1483319cb441");
 
             migrationBuilder.DeleteData(
                 table: "AspNetRoles",
                 keyColumn: "Id",
-                keyValue: "0a4907eb-729e-419c-ae14-82100436a93e");
+                keyValue: "e763297c-78bd-47c5-911a-63828d80b126");
         }
     }
 }

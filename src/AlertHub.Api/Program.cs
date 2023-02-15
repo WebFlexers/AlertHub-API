@@ -31,6 +31,8 @@ app.UseAuthorization();
 
 app.MapControllers();
 
+app.UseStaticFiles();
+
 app.MapHealthChecks("/health").AllowAnonymous();
 
 app.Run();

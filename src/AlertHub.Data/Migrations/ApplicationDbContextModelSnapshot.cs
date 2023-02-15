@@ -74,12 +74,12 @@ namespace AlertHub.Data.Migrations
                     b.Property<int>("DisasterType")
                         .HasColumnType("int");
 
+                    b.Property<string>("ImageName")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<Point>("Location")
                         .IsRequired()
                         .HasColumnType("geography");
-
-                    b.Property<string>("PhotoName")
-                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("Status")
                         .HasColumnType("int");
@@ -171,13 +171,13 @@ namespace AlertHub.Data.Migrations
                     b.HasData(
                         new
                         {
-                            Id = "0a4907eb-729e-419c-ae14-82100436a93e",
+                            Id = "e763297c-78bd-47c5-911a-63828d80b126",
                             Name = "Simple_User",
                             NormalizedName = "SIMPLE_USER"
                         },
                         new
                         {
-                            Id = "02907f69-ce13-4691-8b03-c08f2e2efebd",
+                            Id = "37b822b9-4d38-4e18-ac81-1483319cb441",
                             Name = "Civil_Protection",
                             NormalizedName = "CIVIL_PROTECTION"
                         });

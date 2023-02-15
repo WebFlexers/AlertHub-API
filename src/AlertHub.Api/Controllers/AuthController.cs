@@ -33,7 +33,7 @@ public class AuthController : ControllerBase
     [AllowAnonymous]
     public async Task<ActionResult> Register([FromBody] RegisterAccountDataDTO accountData, CancellationToken cancellationToken)
     {
-        var validationResult = await _accountDataValidator.ValidateAsync(accountData);
+        var validationResult = await _accountDataValidator.ValidateAsync(accountData, cancellationToken);
 
         if (validationResult.IsValid == false)
         {
