@@ -2,6 +2,7 @@
 using System.Reflection;
 using AlertHub.Data.Entities;
 using AlertHub.Data.Seeding;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
@@ -10,9 +11,11 @@ namespace AlertHub.Data;
 
 public class ApplicationDbContext : IdentityDbContext<IdentityUser, IdentityRole, string>
 {
+    private readonly UserManager<IdentityUser> _userManager;
+
     public ApplicationDbContext(DbContextOptions options) : base(options)
     {
-        
+
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -20,13 +23,7 @@ public class ApplicationDbContext : IdentityDbContext<IdentityUser, IdentityRole
         base.OnModelCreating(modelBuilder);
         modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
 
-        modelBuilder.Entity<IdentityRole>().HasData(new List<IdentityRole>
-        {
-            new IdentityRole { Name = "Simple_User", NormalizedName = "SIMPLE_USER"},
-            new IdentityRole { Name = "Civil_Protection", NormalizedName = "CIVIL_PROTECTION"}
-        });
-
-        new SampleData().Seed(modelBuilder);
+        new SampleData(modelBuilder).Seed();
     }
 
     public DbSet<DangerNotification> DangerNotifications { get; set; }

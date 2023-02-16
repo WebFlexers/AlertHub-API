@@ -13,7 +13,7 @@ using NetTopologySuite.Geometries;
 namespace AlertHub.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20230214184903_CreateSchema")]
+    [Migration("20230216160444_CreateSchema")]
     partial class CreateSchema
     {
         /// <inheritdoc />
@@ -21,7 +21,7 @@ namespace AlertHub.Data.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "7.0.2")
+                .HasAnnotation("ProductVersion", "7.0.3")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -170,20 +170,6 @@ namespace AlertHub.Data.Migrations
                         .HasFilter("[NormalizedName] IS NOT NULL");
 
                     b.ToTable("AspNetRoles", (string)null);
-
-                    b.HasData(
-                        new
-                        {
-                            Id = "e763297c-78bd-47c5-911a-63828d80b126",
-                            Name = "Simple_User",
-                            NormalizedName = "SIMPLE_USER"
-                        },
-                        new
-                        {
-                            Id = "37b822b9-4d38-4e18-ac81-1483319cb441",
-                            Name = "Civil_Protection",
-                            NormalizedName = "CIVIL_PROTECTION"
-                        });
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>

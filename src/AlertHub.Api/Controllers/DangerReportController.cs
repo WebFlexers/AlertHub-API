@@ -52,12 +52,16 @@ public class DangerReportController : ControllerBase
             var latitude = double.Parse(dangerReport.Latitude);
             var location = geometryFactory.CreatePoint(new Coordinate(longitude, latitude))!;
             var nowUtc = DateTime.UtcNow;
-            string? imageName = null;
+            string imageName;
 
             if (dangerReport.ImageFile is not null)
             {
                 var imageExtension = dangerReport.ImageFile.ContentType.Split("/")[1];
                 imageName = $"{Guid.NewGuid().ToString()}.{imageExtension}";
+            }
+            else
+            {
+                imageName = "no-image.png";
             }
 
             var newDangerReport = new DangerReport

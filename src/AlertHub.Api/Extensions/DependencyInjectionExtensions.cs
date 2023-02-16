@@ -79,7 +79,7 @@ public static class DependencyInjectionExtensions
                 options.User.RequireUniqueEmail = true;
             })
             .AddEntityFrameworkStores<ApplicationDbContext>()
-            .AddDefaultTokenProviders();;
+            .AddDefaultTokenProviders();
 
         builder.Services.AddAuthorization(opts =>
         {

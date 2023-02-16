@@ -4,8 +4,6 @@ using NetTopologySuite.Geometries;
 
 #nullable disable
 
-#pragma warning disable CA1814 // Prefer jagged arrays over multidimensional
-
 namespace AlertHub.Data.Migrations
 {
     /// <inheritdoc />
@@ -96,15 +94,6 @@ namespace AlertHub.Data.Migrations
                         onDelete: ReferentialAction.Cascade);
                 });
 
-            migrationBuilder.InsertData(
-                table: "AspNetRoles",
-                columns: new[] { "Id", "ConcurrencyStamp", "Name", "NormalizedName" },
-                values: new object[,]
-                {
-                    { "37b822b9-4d38-4e18-ac81-1483319cb441", null, "Civil_Protection", "CIVIL_PROTECTION" },
-                    { "e763297c-78bd-47c5-911a-63828d80b126", null, "Simple_User", "SIMPLE_USER" }
-                });
-
             migrationBuilder.CreateIndex(
                 name: "IX_DangerReports_UserId",
                 table: "DangerReports",
@@ -135,16 +124,6 @@ namespace AlertHub.Data.Migrations
 
             migrationBuilder.DropTable(
                 name: "UserPreferences");
-
-            migrationBuilder.DeleteData(
-                table: "AspNetRoles",
-                keyColumn: "Id",
-                keyValue: "37b822b9-4d38-4e18-ac81-1483319cb441");
-
-            migrationBuilder.DeleteData(
-                table: "AspNetRoles",
-                keyColumn: "Id",
-                keyValue: "e763297c-78bd-47c5-911a-63828d80b126");
         }
     }
 }
