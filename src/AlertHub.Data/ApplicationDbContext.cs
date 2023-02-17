@@ -27,7 +27,8 @@ public class ApplicationDbContext : IdentityDbContext<IdentityUser, IdentityRole
     }
 
     public DbSet<DangerNotification> DangerNotifications { get; set; }
+    public DbSet<ActiveDangerReport> ActiveDangerReports { get; set; }
+    public DbSet<ArchivedDangerReport> ArchivedDangerReports { get; set; }
     public DbSet<DangerReport> DangerReports { get; set; }
     public DbSet<UserLocation> UserLocations { get; set; }
-    public DbSet<UserPreference> UserPreferences { get; set; }
 }

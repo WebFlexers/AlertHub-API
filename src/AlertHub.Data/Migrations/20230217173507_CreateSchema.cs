@@ -20,7 +20,7 @@ namespace AlertHub.Data.Migrations
                         .Annotation("SqlServer:Identity", "1, 1"),
                     Location = table.Column<Point>(type: "geography", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    Culture = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Culture = table.Column<string>(type: "nvarchar(10)", maxLength: 10, nullable: false),
                     Directions = table.Column<string>(type: "nvarchar(max)", nullable: false)
                 },
                 constraints: table =>
@@ -37,9 +37,11 @@ namespace AlertHub.Data.Migrations
                     DisasterType = table.Column<int>(type: "int", nullable: false),
                     Location = table.Column<Point>(type: "geography", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    ImageName = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    ImageName = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     Description = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: true),
                     Status = table.Column<int>(type: "int", nullable: false),
+                    Country = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: false),
+                    Municipality = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: false),
                     Culture = table.Column<string>(type: "nvarchar(5)", maxLength: 5, nullable: false),
                     UserId = table.Column<string>(type: "nvarchar(450)", nullable: false)
                 },
@@ -75,24 +77,52 @@ namespace AlertHub.Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "UserPreferences",
+                name: "ActiveDangerReports",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    Culture = table.Column<string>(type: "nvarchar(400)", maxLength: 400, nullable: false),
-                    UserId = table.Column<string>(type: "nvarchar(450)", nullable: false)
+                    DangerReportId = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_UserPreferences", x => x.Id);
+                    table.PrimaryKey("PK_ActiveDangerReports", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_UserPreferences_AspNetUsers_UserId",
-                        column: x => x.UserId,
-                        principalTable: "AspNetUsers",
+                        name: "FK_ActiveDangerReports_DangerReports_DangerReportId",
+                        column: x => x.DangerReportId,
+                        principalTable: "DangerReports",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
+
+            migrationBuilder.CreateTable(
+                name: "ArchivedDangerReports",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    DangerReportId = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ArchivedDangerReports", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ArchivedDangerReports_DangerReports_DangerReportId",
+                        column: x => x.DangerReportId,
+                        principalTable: "DangerReports",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ActiveDangerReports_DangerReportId",
+                table: "ActiveDangerReports",
+                column: "DangerReportId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ArchivedDangerReports_DangerReportId",
+                table: "ArchivedDangerReports",
+                column: "DangerReportId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_DangerReports_UserId",
@@ -103,27 +133,25 @@ namespace AlertHub.Data.Migrations
                 name: "IX_UserLocations_UserId",
                 table: "UserLocations",
                 column: "UserId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_UserPreferences_UserId",
-                table: "UserPreferences",
-                column: "UserId");
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "DangerNotifications");
+                name: "ActiveDangerReports");
 
             migrationBuilder.DropTable(
-                name: "DangerReports");
+                name: "ArchivedDangerReports");
+
+            migrationBuilder.DropTable(
+                name: "DangerNotifications");
 
             migrationBuilder.DropTable(
                 name: "UserLocations");
 
             migrationBuilder.DropTable(
-                name: "UserPreferences");
+                name: "DangerReports");
         }
     }
 }

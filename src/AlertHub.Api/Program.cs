@@ -10,6 +10,8 @@ builder.AddHealthCheckServices();
 builder.AddAuthServices();
 builder.AddCustomServices();
 
+builder.Services.AddHttpClient();
+
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {
     options.UseSqlServer("name=Default", 

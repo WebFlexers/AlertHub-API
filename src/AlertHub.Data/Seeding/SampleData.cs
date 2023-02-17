@@ -10,7 +10,8 @@ public class SampleData
 
     private const int SeedNumber = 869236954;
     private const int UsersNumber = 100;
-
+    
+    private readonly Random _random = new(SeedNumber);
     private readonly Dictionary<string, string> _usernamesPasswords = new();
 
     private List<IdentityRole> _roles = new();
@@ -24,7 +25,7 @@ public class SampleData
 
     public void Seed()
     {
-        Randomizer.Seed = new Random(SeedNumber);
+        Randomizer.Seed = _random;
 
         //if (System.Diagnostics.Debugger.IsAttached == false)
         //{
@@ -32,18 +33,18 @@ public class SampleData
         //}
 
         CreateRoles();
-        CreateUsers();
-        CreateUsersRoles();
+        //CreateUsers();
+        //CreateUsersRoles();
 
         _modelBuilder.Entity<IdentityRole>().HasData(_roles);
-        _modelBuilder.Entity<IdentityUser>().HasData(_users);
-        _modelBuilder.Entity<IdentityUserRole<string>>().HasData(_usersRoles);
+        //_modelBuilder.Entity<IdentityUser>().HasData(_users);
+        //_modelBuilder.Entity<IdentityUserRole<string>>().HasData(_usersRoles);
     }
 
     private void CreateRoles()
     {
-        var guid1 = Guid.NewGuid().ToString();
-        var guid2 = Guid.NewGuid().ToString();
+        var guid1 = GenerateSeededGuid(SeedNumber).ToString();
+        var guid2 = GenerateSeededGuid(SeedNumber).ToString();
 
         _roles = new List<IdentityRole>
         {
@@ -62,19 +63,19 @@ public class SampleData
 
                 var user = new IdentityUser
                 {
-                    Id = Guid.NewGuid().ToString(),
+                    Id = GenerateSeededGuid(SeedNumber).ToString(),
                     Email = email,
                     NormalizedEmail = email.ToUpper(),
                     EmailConfirmed = false,
                     UserName = username,
                     NormalizedUserName = username.ToUpper(),
-                    ConcurrencyStamp = Guid.NewGuid().ToString(),
+                    ConcurrencyStamp = GenerateSeededGuid(SeedNumber).ToString(),
                     LockoutEnabled = true,
                 };
 
                 var password = f.Internet.Password();
 
-                PasswordHasher<IdentityUser> passwordHasher = new PasswordHasher<IdentityUser>();
+                var passwordHasher = new ConsistentPasswordHasher<IdentityUser>(SeedNumber);
                 user.PasswordHash = passwordHasher.HashPassword(user, password);
 
                 _usernamesPasswords.Add(user.UserName, password);
@@ -95,5 +96,13 @@ public class SampleData
                 UserId = _users[i].Id
             });   
         }
+    }
+
+    private Guid GenerateSeededGuid(int seed)
+    {
+        var guid = new byte[16];
+        _random.NextBytes(guid);
+
+        return new Guid(guid);
     }
 }

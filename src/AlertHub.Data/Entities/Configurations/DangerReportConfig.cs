@@ -19,7 +19,8 @@ public class DangerReportConfig : IEntityTypeConfiguration<DangerReport>
             .IsRequired(true);
 
         builder.Property(dr => dr.ImageName)
-            .IsRequired(false);
+            .IsRequired(false)
+            .HasMaxLength(50);
 
         builder.Property(dr => dr.Description)
             .IsRequired(false)
@@ -31,6 +32,14 @@ public class DangerReportConfig : IEntityTypeConfiguration<DangerReport>
         builder.Property(dr => dr.Culture)
             .IsRequired(true)
             .HasMaxLength(5);
+
+        builder.Property(dr => dr.Country)
+            .IsRequired(true)
+            .HasMaxLength(450);
+
+        builder.Property(dr => dr.Municipality)
+            .IsRequired(true)
+            .HasMaxLength(450);
 
         builder.Property(dr => dr.UserId)
             .IsRequired(true);

@@ -13,6 +13,8 @@ public class DangerReport
     public string ImageName { get; set; }
     public string Description { get; set; }
     public ReportStatus Status { get; set; }
+    public string Country { get; set; }
+    public string Municipality { get; set; }
     public string Culture { get; set; }
 
     public string UserId { get; set; }

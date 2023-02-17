@@ -16,7 +16,8 @@ public class DangerNotificationConfig : IEntityTypeConfiguration<DangerNotificat
             .IsRequired(true);
 
         builder.Property(dn => dn.Culture)
-            .IsRequired(true);
+            .IsRequired(true)
+            .HasMaxLength(10);
 
         builder.Property(dn => dn.Directions)
             .IsRequired(true)

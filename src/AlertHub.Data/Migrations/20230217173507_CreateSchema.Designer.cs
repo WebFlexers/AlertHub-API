@@ -13,7 +13,7 @@ using NetTopologySuite.Geometries;
 namespace AlertHub.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20230216160444_CreateSchema")]
+    [Migration("20230217173507_CreateSchema")]
     partial class CreateSchema
     {
         /// <inheritdoc />
@@ -25,6 +25,42 @@ namespace AlertHub.Data.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
+
+            modelBuilder.Entity("AlertHub.Data.Entities.ActiveDangerReport", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("DangerReportId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DangerReportId");
+
+                    b.ToTable("ActiveDangerReports");
+                });
+
+            modelBuilder.Entity("AlertHub.Data.Entities.ArchivedDangerReport", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("DangerReportId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DangerReportId");
+
+                    b.ToTable("ArchivedDangerReports");
+                });
 
             modelBuilder.Entity("AlertHub.Data.Entities.DangerNotification", b =>
                 {
@@ -39,7 +75,8 @@ namespace AlertHub.Data.Migrations
 
                     b.Property<string>("Culture")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
 
                     b.Property<string>("Directions")
                         .IsRequired()
@@ -62,6 +99,11 @@ namespace AlertHub.Data.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("Country")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -78,11 +120,17 @@ namespace AlertHub.Data.Migrations
                         .HasColumnType("int");
 
                     b.Property<string>("ImageName")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<Point>("Location")
                         .IsRequired()
                         .HasColumnType("geography");
+
+                    b.Property<string>("Municipality")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<int>("Status")
                         .HasColumnType("int");
@@ -119,30 +167,6 @@ namespace AlertHub.Data.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("UserLocations");
-                });
-
-            modelBuilder.Entity("AlertHub.Data.Entities.UserPreference", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Culture")
-                        .IsRequired()
-                        .HasMaxLength(400)
-                        .HasColumnType("nvarchar(400)");
-
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("UserPreferences");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
@@ -343,6 +367,28 @@ namespace AlertHub.Data.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("AlertHub.Data.Entities.ActiveDangerReport", b =>
+                {
+                    b.HasOne("AlertHub.Data.Entities.DangerReport", "DangerReport")
+                        .WithMany()
+                        .HasForeignKey("DangerReportId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("DangerReport");
+                });
+
+            modelBuilder.Entity("AlertHub.Data.Entities.ArchivedDangerReport", b =>
+                {
+                    b.HasOne("AlertHub.Data.Entities.DangerReport", "DangerReport")
+                        .WithMany()
+                        .HasForeignKey("DangerReportId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("DangerReport");
+                });
+
             modelBuilder.Entity("AlertHub.Data.Entities.DangerReport", b =>
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", "User")
@@ -355,17 +401,6 @@ namespace AlertHub.Data.Migrations
                 });
 
             modelBuilder.Entity("AlertHub.Data.Entities.UserLocation", b =>
-                {
-                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("AlertHub.Data.Entities.UserPreference", b =>
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", "User")
                         .WithMany()
