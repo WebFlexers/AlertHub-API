@@ -143,13 +143,13 @@ public class DangerReportController : ControllerBase
                     Country = activeReport.DangerReport.CoordinatesInformation
                         .Any(ci => ci.DangerReportId.Equals(activeReport.DangerReportId)) ?
                             activeReport.DangerReport.CoordinatesInformation
-                                .Find(ci => ci.DangerReportId.Equals(activeReport.DangerReportId) &&
-                                ci.Culture.Equals(activeReport.DangerReport.Culture))!.Country : null,
+                                .First(ci => ci.DangerReportId.Equals(activeReport.DangerReportId) &&
+                                    ci.Culture.Equals(activeReport.DangerReport.Culture))!.Country : null,
                     Municipality = activeReport.DangerReport.CoordinatesInformation
                         .Any(ci => ci.DangerReportId.Equals(activeReport.DangerReportId)) ?
                             activeReport.DangerReport.CoordinatesInformation
-                                .Find(ci => ci.DangerReportId.Equals(activeReport.DangerReportId) &&
-                                        ci.Culture.Equals(activeReport.DangerReport.Culture))!.Municipality : null,
+                                .First(ci => ci.DangerReportId.Equals(activeReport.DangerReportId) &&
+                                    ci.Culture.Equals(activeReport.DangerReport.Culture))!.Municipality : null,
                     UserId = activeReport.DangerReport.UserId,
                 })
                 .ToListAsync();
