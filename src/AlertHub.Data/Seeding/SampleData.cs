@@ -1,6 +1,11 @@
-﻿using Bogus;
+﻿using AlertHub.Data.Entities;
+using AlertHub.Data.Entities.Enums;
+using Bogus;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
+using NetTopologySuite;
+using NetTopologySuite.Geometries;
 
 namespace AlertHub.Data.Seeding;
 
@@ -12,11 +17,34 @@ public class SampleData
     private const int UsersNumber = 100;
     
     private readonly Random _random = new(SeedNumber);
+
+    private readonly List<(string, string)> _countriesMunicipalities = new()
+    {
+        new("Greece", "Agia Varvara"),
+        new("Greece", "Agios Dimitrios"),
+        new("Greece", "Aigaleo"),
+        new("Greece", "Alimos"),
+        new("Greece", "Alonnisos"),
+        new("Greece", "Ampelokipoi"),
+        new("Greece", "Ilioupoli"),
+        new("Greece", "Irakleio"),
+        new("Greece", "Kalamata"),
+        new("Greece", "Kallithea"),
+    };
+    private readonly List<string> _cultures = new()
+    {
+        "en-US",
+        "el-GR"
+    };
+    // Used to get the passwords from debug, since they are encrypted in the database
     private readonly Dictionary<string, string> _usernamesPasswords = new();
 
     private List<IdentityRole> _roles = new();
-    private List<IdentityUser> _users = new();
-    private List<IdentityUserRole<string>> _usersRoles = new();
+    private readonly List<IdentityUser> _users = new();
+    private readonly List<IdentityUserRole<string>> _usersRoles = new();
+    private readonly List<DangerReport> _dangerReports = new();
+    private readonly List<ActiveDangerReport> _activeDangerReports = new();
+    private readonly List<ArchivedDangerReport> _archivedDangerReports = new();
 
     public SampleData(ModelBuilder modelBuilder)
     {
@@ -35,10 +63,14 @@ public class SampleData
         CreateRoles();
         //CreateUsers();
         //CreateUsersRoles();
+        //CreateDangerReports();
 
         _modelBuilder.Entity<IdentityRole>().HasData(_roles);
         //_modelBuilder.Entity<IdentityUser>().HasData(_users);
         //_modelBuilder.Entity<IdentityUserRole<string>>().HasData(_usersRoles);
+        //_modelBuilder.Entity<DangerReport>().HasData(_dangerReports);
+        //_modelBuilder.Entity<ActiveDangerReport>().HasData(_activeDangerReports);
+        //_modelBuilder.Entity<ArchivedDangerReport>().HasData(_archivedDangerReports);
     }
 
     private void CreateRoles()
@@ -75,7 +107,7 @@ public class SampleData
 
                 var password = f.Internet.Password();
 
-                var passwordHasher = new ConsistentPasswordHasher<IdentityUser>(SeedNumber);
+                var passwordHasher = new PasswordHasher<IdentityUser>();
                 user.PasswordHash = passwordHasher.HashPassword(user, password);
 
                 _usernamesPasswords.Add(user.UserName, password);
@@ -98,11 +130,71 @@ public class SampleData
         }
     }
 
+    private void CreateDangerReports()
+    {
+        int dangerReportId = 1;
+        int archivedReportId = 1;
+        int activeReportId = 1;
+
+        var dangerReportsFaker = new Faker<DangerReport>()
+            .CustomInstantiator(f =>
+            {
+                var geometryFactory = NtsGeometryServices.Instance.CreateGeometryFactory(srid: 4326);
+                var location = geometryFactory.CreatePoint(
+                    new Coordinate(GetRandomDouble(21, 24), GetRandomDouble(37, 39)))!;
+                var countryMunicipality = f.PickRandom(_countriesMunicipalities);
+
+                ReportStatus status;
+                var randomNum = _random.Next(1, 100);
+                if (randomNum > 80)
+                {
+                    var randomNum2 = _random.Next(1, 3);
+                    status = randomNum2 > 1 ? ReportStatus.Rejected : ReportStatus.Approved;
+                }
+                else
+                {
+                    status = ReportStatus.Pending;
+                }
+
+                var report = new DangerReport
+                {
+                    Id = dangerReportId++,
+                    DisasterType = f.Random.Enum<DisasterType>(),
+                    Location = location,
+                    ImageName = null,
+                    Description = f.Lorem.Paragraphs(_random.Next(1, 4)),
+                    Status = status,
+                    // TODO: Add Country and Municipality to the correct table
+                    Culture = f.PickRandom(_cultures),
+                    UserId = f.PickRandom(_users).Id
+                };
+
+                
+                if (status == ReportStatus.Approved || status == ReportStatus.Rejected)
+                {
+                    _archivedDangerReports.Add(new ArchivedDangerReport { Id = archivedReportId++, DangerReportId = report.Id });
+                }
+                else
+                {
+                    _activeDangerReports.Add(new ActiveDangerReport { Id = activeReportId++, DangerReportId = report.Id });
+                }
+
+                return report;
+            });
+
+        _dangerReports.AddRange(dangerReportsFaker.Generate(UsersNumber * 3));
+    }
+
     private Guid GenerateSeededGuid(int seed)
     {
         var guid = new byte[16];
         _random.NextBytes(guid);
 
         return new Guid(guid);
+    }
+
+    public double GetRandomDouble(double minimum, double maximum)
+    {
+        return _random.NextDouble() * (maximum - minimum) + minimum;
     }
 }

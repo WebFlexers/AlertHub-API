@@ -1,9 +1,10 @@
 using AlertHub.Api.Extensions;
 using AlertHub.Data;
-using Microsoft.AspNetCore.Authorization;
+using Hangfire;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 
-var MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
+const string myAllowSpecificOrigins = "_myAllowSpecificOrigins";
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,13 +15,13 @@ builder.AddCustomServices();
 
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy(name: MyAllowSpecificOrigins,
-                      policy =>
-                      {
-                          policy.WithOrigins("http://localhost:3000")
-                            .AllowAnyHeader()
-                            .AllowAnyMethod();
-                      });
+    options.AddPolicy(name: myAllowSpecificOrigins,
+    policy =>
+    {
+      policy.WithOrigins("http://localhost:3000")
+        .AllowAnyHeader()
+        .AllowAnyMethod();
+    });
 });
 
 builder.Services.AddHttpClient();
@@ -30,6 +31,14 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer("name=Default", 
         sqlServer => sqlServer.UseNetTopologySuite());
 });
+
+GlobalConfiguration.Configuration.UseSerializerSettings(new JsonSerializerSettings
+{
+    ReferenceLoopHandling = ReferenceLoopHandling.Ignore
+});
+var connectionString = builder.Configuration.GetValue<string>("ConnectionStrings:Default");
+builder.Services.AddHangfire(x => x.UseSqlServerStorage(connectionString));
+builder.Services.AddHangfireServer();
 
 var app = builder.Build();
 
@@ -41,9 +50,11 @@ if (app.Environment.IsDevelopment())
 
 app.UseStaticFiles();
 
+app.UseHangfireDashboard();
+
 //app.UseHttpsRedirection();
 
-app.UseCors(MyAllowSpecificOrigins);
+app.UseCors(myAllowSpecificOrigins);
 
 app.UseAuthentication();
 app.UseAuthorization();

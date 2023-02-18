@@ -30,5 +30,6 @@ public class ApplicationDbContext : IdentityDbContext<IdentityUser, IdentityRole
     public DbSet<ActiveDangerReport> ActiveDangerReports { get; set; }
     public DbSet<ArchivedDangerReport> ArchivedDangerReports { get; set; }
     public DbSet<DangerReport> DangerReports { get; set; }
+    public DbSet<CoordinatesInformation> CoordinatesInformation { get; set; }
     public DbSet<UserLocation> UserLocations { get; set; }
 }

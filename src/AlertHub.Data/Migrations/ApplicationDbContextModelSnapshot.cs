@@ -59,6 +59,44 @@ namespace AlertHub.Data.Migrations
                     b.ToTable("ArchivedDangerReports");
                 });
 
+            modelBuilder.Entity("AlertHub.Data.Entities.CoordinatesInformation", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Country")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Culture")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
+                    b.Property<int>("DangerReportId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Municipality")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Country");
+
+                    b.HasIndex("Culture");
+
+                    b.HasIndex("DangerReportId");
+
+                    b.HasIndex("Municipality");
+
+                    b.ToTable("CoordinatesInformation");
+                });
+
             modelBuilder.Entity("AlertHub.Data.Entities.DangerNotification", b =>
                 {
                     b.Property<int>("Id")
@@ -96,18 +134,13 @@ namespace AlertHub.Data.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("Country")
-                        .IsRequired()
-                        .HasMaxLength(450)
-                        .HasColumnType("nvarchar(450)");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Culture")
                         .IsRequired()
-                        .HasMaxLength(5)
-                        .HasColumnType("nvarchar(5)");
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
 
                     b.Property<string>("Description")
                         .HasMaxLength(2000)
@@ -124,11 +157,6 @@ namespace AlertHub.Data.Migrations
                         .IsRequired()
                         .HasColumnType("geography");
 
-                    b.Property<string>("Municipality")
-                        .IsRequired()
-                        .HasMaxLength(450)
-                        .HasColumnType("nvarchar(450)");
-
                     b.Property<int>("Status")
                         .HasColumnType("int");
 
@@ -137,6 +165,8 @@ namespace AlertHub.Data.Migrations
                         .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CreatedAt");
 
                     b.HasIndex("UserId");
 
@@ -402,6 +432,17 @@ namespace AlertHub.Data.Migrations
                     b.Navigation("DangerReport");
                 });
 
+            modelBuilder.Entity("AlertHub.Data.Entities.CoordinatesInformation", b =>
+                {
+                    b.HasOne("AlertHub.Data.Entities.DangerReport", "DangerReport")
+                        .WithMany("CoordinatesInformation")
+                        .HasForeignKey("DangerReportId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("DangerReport");
+                });
+
             modelBuilder.Entity("AlertHub.Data.Entities.DangerReport", b =>
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", "User")
@@ -473,6 +514,11 @@ namespace AlertHub.Data.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("AlertHub.Data.Entities.DangerReport", b =>
+                {
+                    b.Navigation("CoordinatesInformation");
                 });
 #pragma warning restore 612, 618
         }

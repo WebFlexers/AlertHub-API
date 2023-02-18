@@ -15,6 +15,10 @@ public class DangerReportConfig : IEntityTypeConfiguration<DangerReport>
         builder.Property(dr => dr.Location)
             .IsRequired(true);
 
+        builder.Property(dr => dr.CreatedAt)
+            .IsRequired(true);
+        builder.HasIndex(dr => dr.CreatedAt);
+
         builder.Property(dr => dr.DisasterType)
             .IsRequired(true);
 
@@ -31,15 +35,7 @@ public class DangerReportConfig : IEntityTypeConfiguration<DangerReport>
 
         builder.Property(dr => dr.Culture)
             .IsRequired(true)
-            .HasMaxLength(5);
-
-        builder.Property(dr => dr.Country)
-            .IsRequired(true)
-            .HasMaxLength(450);
-
-        builder.Property(dr => dr.Municipality)
-            .IsRequired(true)
-            .HasMaxLength(450);
+            .HasMaxLength(10);
 
         builder.Property(dr => dr.UserId)
             .IsRequired(true);

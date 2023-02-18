@@ -15,6 +15,7 @@ using AlertHub.Api.Models;
 using System.Net.Http;
 using System.Security.Policy;
 using System.Text.Json;
+using Hangfire;
 
 namespace AlertHub.Api.Controllers;
 [Route("api/[controller]")]
@@ -54,10 +55,28 @@ public class DangerReportController : ControllerBase
                 return BadRequest(new { errors = errorsByProperty });
             }
 
-            var newDangerReport = await CreateDangerReportFromDTO(dangerReportDTO);
+            string imageName;
+            Task uploadTask;
 
-            // Begin a transaction and only commit it if the photo
-            // uploads successfully. Otherwise roll the changes back
+            if (dangerReportDTO.ImageFile is not null)
+            {
+                var imageExtension = dangerReportDTO.ImageFile.ContentType.Split("/")[1];
+                imageName = $"{Guid.NewGuid().ToString()}.{imageExtension}";
+                uploadTask = Task.Run(async () =>
+                {
+                    await UploadImage(imageName, dangerReportDTO.ImageFile, cancellationToken);
+                }, cancellationToken);
+            }
+            else
+            {
+                imageName = "no-image.png";
+                uploadTask = Task.CompletedTask;
+            }
+
+            var newDangerReport = await CreateDangerReportFromDTO(dangerReportDTO, imageName);
+
+            // Begin a transaction and only commit it only if no exceptions
+            // are thrown. Otherwise roll the changes back
             await _dbContext.Database.BeginTransactionAsync(cancellationToken);
 
             await _dbContext.DangerReports.AddAsync(newDangerReport, cancellationToken);
@@ -68,12 +87,15 @@ public class DangerReportController : ControllerBase
                 DangerReportId = newDangerReport.Id,
             }, cancellationToken);
 
+            // Fire and run (and hodl)
+            BackgroundJob.Enqueue(() =>
+                CreateCoordinatesInformation(newDangerReport.Location.X, newDangerReport.Location.Y, 
+                                                      newDangerReport.Id, cancellationToken)
+            );
+
             await _dbContext.SaveChangesAsync(cancellationToken);
 
-            if (dangerReportDTO.ImageFile is not null)
-            {
-                await UploadImage(newDangerReport, dangerReportDTO.ImageFile, cancellationToken);
-            }
+            await uploadTask;
 
             await _dbContext.Database.CommitTransactionAsync(cancellationToken);
             _logger.LogInformation("Successfully created danger report by user: {userid}", newDangerReport.UserId);
@@ -132,7 +154,20 @@ public class DangerReportController : ControllerBase
         }
     }
 
-    private async Task<DangerReport> CreateDangerReportFromDTO(CreateDangerReportDTO reportDTO)
+    private async Task UploadImage(string imageName, IFormFile imageFile, CancellationToken cancellationToken)
+    {
+        var imagesPath = Path.Combine(_environment.WebRootPath, "UploadDangerReportImages");
+        if (Directory.Exists(imagesPath) == false) {
+            Directory.CreateDirectory(imagesPath);
+        }
+
+        await using FileStream fileStream = System.IO.File.Create(Path.Combine(imagesPath, imageName));
+        await imageFile.CopyToAsync(fileStream, cancellationToken);
+        await fileStream.FlushAsync(CancellationToken.None);
+        _logger.LogInformation("Successfully uploaded image {imageName}", imageName);
+    }
+
+    private Task<DangerReport> CreateDangerReportFromDTO(CreateDangerReportDTO reportDTO, string imageName)
     {
         var geometryFactory = NtsGeometryServices.Instance.CreateGeometryFactory(srid: 4326);
 
@@ -141,17 +176,6 @@ public class DangerReportController : ControllerBase
         var latitude = double.Parse(reportDTO.Latitude);
         var location = geometryFactory.CreatePoint(new Coordinate(longitude, latitude))!;
         var nowUtc = DateTime.UtcNow;
-        string imageName;
-
-        if (reportDTO.ImageFile is not null)
-        {
-            var imageExtension = reportDTO.ImageFile.ContentType.Split("/")[1];
-            imageName = $"{Guid.NewGuid().ToString()}.{imageExtension}";
-        }
-        else
-        {
-            imageName = "no-image.png";
-        }
 
         var newDangerReport = new DangerReport
         {
@@ -165,52 +189,64 @@ public class DangerReportController : ControllerBase
             UserId = reportDTO.UserId
         };
 
-        var locationInfo = 
-            await FetchCountryAndMunicipalityFromCoordinates(newDangerReport.Location, newDangerReport.Culture);
-
-        newDangerReport.Country = locationInfo.Country;
-        newDangerReport.Municipality = locationInfo.Municipality;
-
-        return newDangerReport;
+        return Task.FromResult(newDangerReport);
     }
 
-    private async Task<NominatimResponse> FetchCountryAndMunicipalityFromCoordinates(Point location, string culture)
+    [NonAction]
+    public async Task CreateCoordinatesInformation(double longitude, double latitude, int dangerReportId, CancellationToken cancellationToken)
+    {
+        var chromeUserAgent = 
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36";
+        var firefoxUserAgent =
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:110.0) Gecko/20100101 Firefox/110.0";
+
+        var greekResponse = await FetchCoordinatesInfo(longitude, latitude, "el-GR", chromeUserAgent, cancellationToken);
+        await AddCoordinatesInformationToDb(greekResponse, dangerReportId, cancellationToken);
+        var englishResponse = await FetchCoordinatesInfo(longitude, latitude, "en-US", firefoxUserAgent, cancellationToken);
+        await AddCoordinatesInformationToDb(englishResponse, dangerReportId, cancellationToken);
+        await _dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    private async Task AddCoordinatesInformationToDb(NominatimResponse nominatimResponse, int dangerReportId, CancellationToken cancellationToken)
+    {
+        await _dbContext.CoordinatesInformation.AddAsync(new CoordinatesInformation
+        {
+            Country = nominatimResponse.Country,
+            Municipality = nominatimResponse.Municipality,
+            Culture = nominatimResponse.Culture,
+            DangerReportId = dangerReportId
+        }, cancellationToken);
+    }
+
+    private async Task<NominatimResponse> FetchCoordinatesInfo(double longitude, double latitude, string culture, 
+        string userAgent, CancellationToken cancellationToken)
     {
         // Get only en from en-US, el from el-GR, etc
         var language = culture.Split("-")[0];
 
         var nominatimUrl = _config.GetValue<string>("NominatimUrl")!
-            .Replace("{longitude}", location.X.ToString(CultureInfo.GetCultureInfo(culture)))
-            .Replace("{latitude}", location.Y.ToString(CultureInfo.GetCultureInfo(culture)))
+            .Replace("{longitude}", longitude.ToString(CultureInfo.GetCultureInfo("en-US")))
+            .Replace("{latitude}", latitude.ToString(CultureInfo.GetCultureInfo("en-US")))
             .Replace("{language}", language);
 
-        var httpClient = _httpClientFactory.CreateClient();
-        httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (compatible; AcmeInc/2.0)");
+        _logger.LogDebug("The url is: {url}", nominatimUrl);
 
-        var response = await httpClient.GetAsync(nominatimUrl);
+        var httpClient = _httpClientFactory.CreateClient();
+
+        httpClient.DefaultRequestHeaders.UserAgent.ParseAdd(userAgent);
+
+        var response = await httpClient.GetAsync(nominatimUrl, cancellationToken);
         if (!response.IsSuccessStatusCode)
         {
             throw new HttpRequestException($"HTTP Error: {response.StatusCode}");
         }
 
-        await using var responseStream = await response.Content.ReadAsStreamAsync();
-        using var jsonDocument = await JsonDocument.ParseAsync(responseStream);
+        // Get the country and municipality from the fetch result
+        await using var responseStream = await response.Content.ReadAsStreamAsync(cancellationToken);
+        using var jsonDocument = await JsonDocument.ParseAsync(responseStream, cancellationToken: cancellationToken);
         var country = jsonDocument.RootElement.GetProperty("address").GetProperty("country").GetString();
         var municipality = jsonDocument.RootElement.GetProperty("address").GetProperty("municipality").GetString();
 
-        return new NominatimResponse {Country = country, Municipality = municipality};
-    }
-
-    private async Task UploadImage(DangerReport dangerReport, IFormFile imageFile, CancellationToken cancellationToken)
-    {
-        var imagesPath = Path.Combine(_environment.WebRootPath, "UploadDangerReportImages");
-        if (Directory.Exists(imagesPath) == false) {
-            Directory.CreateDirectory(imagesPath);
-        }
-
-        await using FileStream fileStream = System.IO.File.Create(Path.Combine(imagesPath, dangerReport.ImageName));
-        await imageFile.CopyToAsync(fileStream, cancellationToken);
-        await fileStream.FlushAsync(CancellationToken.None);
-        _logger.LogInformation("Successfully uploaded image {imageName}", dangerReport.ImageName);
+        return new NominatimResponse { Country = country, Municipality = municipality, Culture = culture };
     }
 }
