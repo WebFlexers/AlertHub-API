@@ -15,6 +15,7 @@ using AlertHub.Api.Models;
 using System.Net.Http;
 using System.Security.Policy;
 using System.Text.Json;
+using AlertHub.Api.Cultures;
 using Hangfire;
 
 namespace AlertHub.Api.Controllers;
@@ -115,8 +116,8 @@ public class DangerReportController : ControllerBase
         }
     }
 
-    [HttpGet("GetActiveReportsByTimeDescending/{pageNumber}/{itemsPerPage}")]
-    public async Task<ActionResult<List<DangerReport>>> Get(int pageNumber, int itemsPerPage)
+    [HttpGet("GetActiveReportsByTimeDescending/{pageNumber}/{itemsPerPage}/{culture}")]
+    public async Task<ActionResult<List<DangerReportDTO>>> Get(int pageNumber, int itemsPerPage, string culture)
     {
         try
         {
@@ -130,7 +131,7 @@ public class DangerReportController : ControllerBase
                 .Select(activeReport => new DangerReportDTO
                 {
                     Id = activeReport.DangerReportId,
-                    DisasterType = activeReport.DangerReport.DisasterType,
+                    DisasterType = activeReport.DangerReport.DisasterType.ToString(),
                     Longitude = activeReport.DangerReport.Location.X,
                     Latitude = activeReport.DangerReport.Location.Y,
                     CreatedAt = activeReport.DangerReport.CreatedAt,
@@ -138,21 +139,32 @@ public class DangerReportController : ControllerBase
                         $@"{imagesPath}/{activeReport.DangerReport.ImageName}" : 
                         null,
                     Description = activeReport.DangerReport.Description,
-                    Status = activeReport.DangerReport.Status,
+                    Status = activeReport.DangerReport.Status.ToString(),
                     Culture = activeReport.DangerReport.Culture,
                     Country = activeReport.DangerReport.CoordinatesInformation
                         .Any(ci => ci.DangerReportId.Equals(activeReport.DangerReportId)) ?
                             activeReport.DangerReport.CoordinatesInformation
                                 .First(ci => ci.DangerReportId.Equals(activeReport.DangerReportId) &&
-                                    ci.Culture.Equals(activeReport.DangerReport.Culture))!.Country : null,
+                                    ci.Culture.Equals(culture))!.Country : null,
                     Municipality = activeReport.DangerReport.CoordinatesInformation
                         .Any(ci => ci.DangerReportId.Equals(activeReport.DangerReportId)) ?
                             activeReport.DangerReport.CoordinatesInformation
                                 .First(ci => ci.DangerReportId.Equals(activeReport.DangerReportId) &&
-                                    ci.Culture.Equals(activeReport.DangerReport.Culture))!.Municipality : null,
+                                    ci.Culture.Equals(culture))!.Municipality : null,
                     UserId = activeReport.DangerReport.UserId,
                 })
                 .ToListAsync();
+
+            if (culture.Equals("en-US")) return Ok(reports);
+
+            foreach (var report in reports)
+            {
+                report.DisasterType = DisasterConverter.TranslateDisaster(
+                    Enum.Parse<DisasterType>(report.DisasterType), culture);
+
+                report.Status = StatusConverter.TranslateStatus(
+                    Enum.Parse<ReportStatus>(report.Status), culture);
+            }
 
             return Ok(reports);
         }
