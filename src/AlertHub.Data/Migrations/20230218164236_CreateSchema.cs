@@ -119,7 +119,7 @@ namespace AlertHub.Data.Migrations
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     Country = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: false),
-                    Municipality = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: true),
+                    Municipality = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: false),
                     Culture = table.Column<string>(type: "nvarchar(10)", maxLength: 10, nullable: false),
                     DangerReportId = table.Column<int>(type: "int", nullable: false)
                 },

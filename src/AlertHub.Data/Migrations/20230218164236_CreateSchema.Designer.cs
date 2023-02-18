@@ -13,7 +13,7 @@ using NetTopologySuite.Geometries;
 namespace AlertHub.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20230218004647_CreateSchema")]
+    [Migration("20230218164236_CreateSchema")]
     partial class CreateSchema
     {
         /// <inheritdoc />
@@ -84,6 +84,7 @@ namespace AlertHub.Data.Migrations
                         .HasColumnType("int");
 
                     b.Property<string>("Municipality")
+                        .IsRequired()
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
 

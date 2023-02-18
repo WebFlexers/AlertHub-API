@@ -115,7 +115,7 @@ public class DangerReportController : ControllerBase
         }
     }
 
-    [HttpGet("GetByTimeDescending/{pageNumber}/{itemsPerPage}")]
+    [HttpGet("GetActiveReportsByTimeDescending/{pageNumber}/{itemsPerPage}")]
     public async Task<ActionResult<List<DangerReport>>> Get(int pageNumber, int itemsPerPage)
     {
         try
@@ -123,24 +123,34 @@ public class DangerReportController : ControllerBase
             string rootPath = $"{Request.Scheme}://{Request.Host}{Request.PathBase}";
             var imagesPath = $@"{rootPath}/UploadDangerReportImages";
 
-            var reports = await _dbContext.DangerReports
+            var reports = await _dbContext.ActiveDangerReports
                 .AsNoTracking()
-                .OrderByDescending(report => report.CreatedAt)
+                .OrderByDescending(activeReport => activeReport.DangerReport.CreatedAt)
                 .Paginate(pageNumber, itemsPerPage)
-                .Select(report => new DangerReportDTO
+                .Select(activeReport => new DangerReportDTO
                 {
-                    Id = report.Id,
-                    DisasterType = report.DisasterType,
-                    Longitude = report.Location.X,
-                    Latitude = report.Location.Y,
-                    CreatedAt = report.CreatedAt,
-                    ImageUrl = report.ImageName != null ? 
-                        $@"{imagesPath}/{report.ImageName}" : 
+                    Id = activeReport.DangerReportId,
+                    DisasterType = activeReport.DangerReport.DisasterType,
+                    Longitude = activeReport.DangerReport.Location.X,
+                    Latitude = activeReport.DangerReport.Location.Y,
+                    CreatedAt = activeReport.DangerReport.CreatedAt,
+                    ImageUrl = activeReport.DangerReport.ImageName != null ? 
+                        $@"{imagesPath}/{activeReport.DangerReport.ImageName}" : 
                         null,
-                    Description = report.Description,
-                    Status = report.Status,
-                    Culture = report.Culture,
-                    UserId = report.UserId,
+                    Description = activeReport.DangerReport.Description,
+                    Status = activeReport.DangerReport.Status,
+                    Culture = activeReport.DangerReport.Culture,
+                    Country = activeReport.DangerReport.CoordinatesInformation
+                        .Any(ci => ci.DangerReportId.Equals(activeReport.DangerReportId)) ?
+                            activeReport.DangerReport.CoordinatesInformation
+                                .Find(ci => ci.DangerReportId.Equals(activeReport.DangerReportId) &&
+                                ci.Culture.Equals(activeReport.DangerReport.Culture))!.Country : null,
+                    Municipality = activeReport.DangerReport.CoordinatesInformation
+                        .Any(ci => ci.DangerReportId.Equals(activeReport.DangerReportId)) ?
+                            activeReport.DangerReport.CoordinatesInformation
+                                .Find(ci => ci.DangerReportId.Equals(activeReport.DangerReportId) &&
+                                        ci.Culture.Equals(activeReport.DangerReport.Culture))!.Municipality : null,
+                    UserId = activeReport.DangerReport.UserId,
                 })
                 .ToListAsync();
 

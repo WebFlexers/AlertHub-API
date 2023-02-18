@@ -18,7 +18,7 @@ public class SampleData
     
     private readonly Random _random = new(SeedNumber);
 
-    private readonly List<(string, string)> _countriesMunicipalities = new()
+    private readonly List<(string, string)> _countriesMunicipalitiesEnglish = new()
     {
         new("Greece", "Agia Varvara"),
         new("Greece", "Agios Dimitrios"),
@@ -30,6 +30,19 @@ public class SampleData
         new("Greece", "Irakleio"),
         new("Greece", "Kalamata"),
         new("Greece", "Kallithea"),
+    };
+    private readonly List<(string, string)> _countriesMunicipalitiesGreek = new()
+    {
+        new("Ελλάδα", "Αγία Βαρβάρα"),
+        new("Ελλάδα", "Άγιος Δημήτριος"),
+        new("Ελλάδα", "Αιγάλεω"),
+        new("Ελλάδα", "Άλιμος"),
+        new("Ελλάδα", "Αλόννησος"),
+        new("Ελλάδα", "Αμπελόκηποι"),
+        new("Ελλάδα", "Ηλιούπολη"),
+        new("Ελλάδα", "Ηράκλειο"),
+        new("Ελλάδα", "Καλαμάτα"),
+        new("Ελλάδα", "Καλλιθέα"),
     };
     private readonly List<string> _cultures = new()
     {
@@ -45,6 +58,8 @@ public class SampleData
     private readonly List<DangerReport> _dangerReports = new();
     private readonly List<ActiveDangerReport> _activeDangerReports = new();
     private readonly List<ArchivedDangerReport> _archivedDangerReports = new();
+    private readonly List<CoordinatesInformation> _coordinatesInformation = new();
+    private readonly List<UserLocation> _userLocations = new();
 
     public SampleData(ModelBuilder modelBuilder)
     {
@@ -61,22 +76,25 @@ public class SampleData
         //}
 
         CreateRoles();
-        //CreateUsers();
-        //CreateUsersRoles();
-        //CreateDangerReports();
+        CreateUsers();
+        CreateUsersRoles();
+        CreateDangerReports();
+        CreateUserLocations();
 
         _modelBuilder.Entity<IdentityRole>().HasData(_roles);
-        //_modelBuilder.Entity<IdentityUser>().HasData(_users);
-        //_modelBuilder.Entity<IdentityUserRole<string>>().HasData(_usersRoles);
-        //_modelBuilder.Entity<DangerReport>().HasData(_dangerReports);
-        //_modelBuilder.Entity<ActiveDangerReport>().HasData(_activeDangerReports);
-        //_modelBuilder.Entity<ArchivedDangerReport>().HasData(_archivedDangerReports);
+        _modelBuilder.Entity<IdentityUser>().HasData(_users);
+        _modelBuilder.Entity<IdentityUserRole<string>>().HasData(_usersRoles);
+        _modelBuilder.Entity<DangerReport>().HasData(_dangerReports);
+        _modelBuilder.Entity<ActiveDangerReport>().HasData(_activeDangerReports);
+        _modelBuilder.Entity<ArchivedDangerReport>().HasData(_archivedDangerReports);
+        _modelBuilder.Entity<CoordinatesInformation>().HasData(_coordinatesInformation);
+        _modelBuilder.Entity<UserLocation>().HasData(_userLocations);
     }
 
     private void CreateRoles()
     {
-        var guid1 = GenerateSeededGuid(SeedNumber).ToString();
-        var guid2 = GenerateSeededGuid(SeedNumber).ToString();
+        var guid1 = GenerateSeededGuid().ToString();
+        var guid2 = GenerateSeededGuid().ToString();
 
         _roles = new List<IdentityRole>
         {
@@ -95,13 +113,13 @@ public class SampleData
 
                 var user = new IdentityUser
                 {
-                    Id = GenerateSeededGuid(SeedNumber).ToString(),
+                    Id = GenerateSeededGuid().ToString(),
                     Email = email,
                     NormalizedEmail = email.ToUpper(),
                     EmailConfirmed = false,
                     UserName = username,
                     NormalizedUserName = username.ToUpper(),
-                    ConcurrencyStamp = GenerateSeededGuid(SeedNumber).ToString(),
+                    ConcurrencyStamp = GenerateSeededGuid().ToString(),
                     LockoutEnabled = true,
                 };
 
@@ -135,6 +153,7 @@ public class SampleData
         int dangerReportId = 1;
         int archivedReportId = 1;
         int activeReportId = 1;
+        int coordinatesInfoId = 1;
 
         var dangerReportsFaker = new Faker<DangerReport>()
             .CustomInstantiator(f =>
@@ -142,34 +161,58 @@ public class SampleData
                 var geometryFactory = NtsGeometryServices.Instance.CreateGeometryFactory(srid: 4326);
                 var location = geometryFactory.CreatePoint(
                     new Coordinate(GetRandomDouble(21, 24), GetRandomDouble(37, 39)))!;
-                var countryMunicipality = f.PickRandom(_countriesMunicipalities);
 
+                DateTime datetime;
                 ReportStatus status;
+
                 var randomNum = _random.Next(1, 100);
                 if (randomNum > 80)
                 {
                     var randomNum2 = _random.Next(1, 3);
                     status = randomNum2 > 1 ? ReportStatus.Rejected : ReportStatus.Approved;
+                    datetime = f.Date.Past(1, new DateTime(2023, 2, 18)).ToUniversalTime();
                 }
                 else
                 {
                     status = ReportStatus.Pending;
+                    datetime = f.Date.Recent(1, new DateTime(2023, 2, 18)).ToUniversalTime();
                 }
 
                 var report = new DangerReport
                 {
                     Id = dangerReportId++,
                     DisasterType = f.Random.Enum<DisasterType>(),
+                    CreatedAt = datetime,
                     Location = location,
                     ImageName = null,
-                    Description = f.Lorem.Paragraphs(_random.Next(1, 4)),
+                    Description = f.Lorem.Paragraphs(_random.Next(1, 3)),
                     Status = status,
-                    // TODO: Add Country and Municipality to the correct table
                     Culture = f.PickRandom(_cultures),
                     UserId = f.PickRandom(_users).Id
                 };
 
-                
+                var randomCountryMuniIndex = _random.Next(0, _countriesMunicipalitiesEnglish.Count);
+
+                var countryMunicipalityEnglish = _countriesMunicipalitiesEnglish[randomCountryMuniIndex];
+                _coordinatesInformation.Add(new CoordinatesInformation
+                {
+                    Id = coordinatesInfoId++,
+                    Culture = "en-US",
+                    Country = countryMunicipalityEnglish.Item1,
+                    Municipality = countryMunicipalityEnglish.Item2,
+                    DangerReportId = report.Id,
+                });
+
+                var countryMunicipalityGreek = _countriesMunicipalitiesGreek[randomCountryMuniIndex];
+                _coordinatesInformation.Add(new CoordinatesInformation
+                {
+                    Id = coordinatesInfoId++,
+                    Culture = "el-GR",
+                    Country = countryMunicipalityGreek.Item1,
+                    Municipality = countryMunicipalityGreek.Item2,
+                    DangerReportId = report.Id,
+                });
+
                 if (status == ReportStatus.Approved || status == ReportStatus.Rejected)
                 {
                     _archivedDangerReports.Add(new ArchivedDangerReport { Id = archivedReportId++, DangerReportId = report.Id });
@@ -185,7 +228,26 @@ public class SampleData
         _dangerReports.AddRange(dangerReportsFaker.Generate(UsersNumber * 3));
     }
 
-    private Guid GenerateSeededGuid(int seed)
+    private void CreateUserLocations()
+    {
+        int userLocationId = 1;
+
+        foreach (var user in _users)
+        {
+            var geometryFactory = NtsGeometryServices.Instance.CreateGeometryFactory(srid: 4326);
+            var location = geometryFactory.CreatePoint(
+                new Coordinate(GetRandomDouble(21, 24), GetRandomDouble(37, 39)))!;
+
+            _userLocations.Add(new UserLocation
+            {
+                Id = userLocationId++,
+                Location = location,
+                UserId = user.Id,
+            });
+        }
+    }
+
+    private Guid GenerateSeededGuid()
     {
         var guid = new byte[16];
         _random.NextBytes(guid);

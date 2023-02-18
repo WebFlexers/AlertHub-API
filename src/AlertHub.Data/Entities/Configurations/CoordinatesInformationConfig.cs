@@ -15,7 +15,7 @@ public class CoordinatesInformationConfig : IEntityTypeConfiguration<Coordinates
         builder.HasIndex(ci => ci.Country);
 
         builder.Property(ci => ci.Municipality)
-            .IsRequired(false)
+            .IsRequired(true)
             .HasMaxLength(450);
         builder.HasIndex(ci => ci.Municipality);
         
