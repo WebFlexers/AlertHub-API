@@ -24,7 +24,7 @@ public class DangerReportConfig : IEntityTypeConfiguration<DangerReport>
 
         builder.Property(dr => dr.ImageName)
             .IsRequired(false)
-            .HasMaxLength(50);
+            .HasMaxLength(200);
 
         builder.Property(dr => dr.Description)
             .IsRequired(false)

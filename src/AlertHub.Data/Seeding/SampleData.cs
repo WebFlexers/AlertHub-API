@@ -44,6 +44,16 @@ public class SampleData
         new("Ελλάδα", "Καλαμάτα"),
         new("Ελλάδα", "Καλλιθέα"),
     };
+    private readonly Dictionary<string, string> _urlsByImageName = new()
+    {
+        {"cyclone", "cyclone.jpg"},
+        {"earthquake", "earthquake.jpg"},
+        {"flood", "flood.jpg"},
+        {"hailstorm", "hailstorm.jpg"},
+        {"other", "no-image.jpg"},
+        {"tornado", "tornado.jpg"},
+        {"wildfire", "wildfire.jpg"}
+    };
     private readonly List<string> _cultures = new()
     {
         "en-US",
@@ -178,13 +188,15 @@ public class SampleData
                     datetime = f.Date.Recent(1, new DateTime(2023, 2, 18)).ToUniversalTime();
                 }
 
+                var disasterType = f.Random.Enum<DisasterType>();
+
                 var report = new DangerReport
                 {
                     Id = dangerReportId++,
-                    DisasterType = f.Random.Enum<DisasterType>(),
+                    DisasterType = disasterType,
                     CreatedAt = datetime,
                     Location = location,
-                    ImageName = null,
+                    ImageName = _urlsByImageName[disasterType.ToString().ToLower()],
                     Description = f.Lorem.Paragraphs(_random.Next(1, 3)),
                     Status = status,
                     Culture = f.PickRandom(_cultures),
