@@ -116,7 +116,7 @@ public class DangerReportController : ControllerBase
         }
     }
 
-    [HttpGet("GetActiveReportsByTimeDescending/{pageNumber}/{itemsPerPage}/{culture}")]
+    [HttpGet("GetActiveReportsByTimeDescending")]
     public async Task<ActionResult<List<DangerReportDTO>>> Get(int pageNumber, int itemsPerPage, string culture)
     {
         try
