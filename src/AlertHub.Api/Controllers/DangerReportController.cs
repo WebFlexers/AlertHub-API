@@ -174,6 +174,7 @@ public class DangerReportController : ControllerBase
     public async Task<ActionResult> GetReportsByImportance(int pageNumber, int itemsPerPage, string culture)
     {
         var reports = await _dbContext.CoordinatesInformation
+            .AsNoTracking()
             .Where(ci => ci.DangerReport.ActiveDangerReport.DangerReportId.Equals(ci.DangerReportId))
             .Where(ci => ci.Culture.Equals(culture))
             .GroupBy(ci => new { ci.Municipality })
@@ -181,13 +182,6 @@ public class DangerReportController : ControllerBase
             .OrderByDescending(group => group.Importance)
             .Paginate(pageNumber, itemsPerPage)
             .ToListAsync();
-
-        //var reports = await _dbContext.ActiveDangerReports
-        //    .AsNoTracking()
-        //    .GroupBy(activeReport => activeReport.DangerReport.CoordinatesInformation
-        //        .GetMunicipalityByCulture(culture, activeReport.DangerReportId, activeReport.DangerReport.CoordinatesInformation))
-        //    .SelectMany(g => g)
-        //    .ToListAsync();
 
         return Ok(reports);
     }
