@@ -18,5 +18,7 @@ public class DangerReport
     public string UserId { get; set; }
     public IdentityUser User { get; set; }
 
+    public ActiveDangerReport ActiveDangerReport { get; set; }
+    public ArchivedDangerReport ArchivedDangerReport { get; set; }
     public List<CoordinatesInformation> CoordinatesInformation { get; set; }
 }

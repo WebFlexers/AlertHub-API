@@ -142,15 +142,9 @@ public class DangerReportController : ControllerBase
                     Status = activeReport.DangerReport.Status.ToString(),
                     Culture = activeReport.DangerReport.Culture,
                     Country = activeReport.DangerReport.CoordinatesInformation
-                        .Any(ci => ci.DangerReportId.Equals(activeReport.DangerReportId)) ?
-                            activeReport.DangerReport.CoordinatesInformation
-                                .First(ci => ci.DangerReportId.Equals(activeReport.DangerReportId) &&
-                                    ci.Culture.Equals(culture))!.Country : null,
+                        .GetCountryByCulture(culture, activeReport.DangerReportId, activeReport.DangerReport.CoordinatesInformation),
                     Municipality = activeReport.DangerReport.CoordinatesInformation
-                        .Any(ci => ci.DangerReportId.Equals(activeReport.DangerReportId)) ?
-                            activeReport.DangerReport.CoordinatesInformation
-                                .First(ci => ci.DangerReportId.Equals(activeReport.DangerReportId) &&
-                                    ci.Culture.Equals(culture))!.Municipality : null,
+                        .GetMunicipalityByCulture(culture, activeReport.DangerReportId, activeReport.DangerReport.CoordinatesInformation),
                     UserId = activeReport.DangerReport.UserId,
                 })
                 .ToListAsync();
@@ -174,6 +168,28 @@ public class DangerReportController : ControllerBase
                                  "danger reports sorted by time descending");
             return BadRequest();
         }
+    }
+
+    [HttpGet("GetReportsByImportance")]
+    public async Task<ActionResult> GetReportsByImportance(int pageNumber, int itemsPerPage, string culture)
+    {
+        var reports = await _dbContext.CoordinatesInformation
+            .Where(ci => ci.DangerReport.ActiveDangerReport.DangerReportId.Equals(ci.DangerReportId))
+            .Where(ci => ci.Culture.Equals(culture))
+            .GroupBy(ci => new { ci.Municipality })
+            .Select(group => new { Municipality = group.Key.Municipality ,Importance = group.Count(), DangerReports = group.ToList() })
+            .OrderByDescending(group => group.Importance)
+            .Paginate(pageNumber, itemsPerPage)
+            .ToListAsync();
+
+        //var reports = await _dbContext.ActiveDangerReports
+        //    .AsNoTracking()
+        //    .GroupBy(activeReport => activeReport.DangerReport.CoordinatesInformation
+        //        .GetMunicipalityByCulture(culture, activeReport.DangerReportId, activeReport.DangerReport.CoordinatesInformation))
+        //    .SelectMany(g => g)
+        //    .ToListAsync();
+
+        return Ok(reports);
     }
 
     private async Task UploadImage(string imageName, IFormFile imageFile, CancellationToken cancellationToken)
