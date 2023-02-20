@@ -17,6 +17,7 @@ using System.Security.Policy;
 using System.Text.Json;
 using AlertHub.Api.Cultures;
 using Hangfire;
+using System.Text.RegularExpressions;
 
 namespace AlertHub.Api.Controllers;
 [Route("api/[controller]")]
@@ -149,7 +150,10 @@ public class DangerReportController : ControllerBase
                 })
                 .ToListAsync();
 
-            if (culture.ToLower().Equals("en-us")) return Ok(reports);
+            if (culture.ToLower().Equals("en-us"))
+            {
+                return Ok(reports);
+            }
 
             foreach (var report in reports)
             {
@@ -170,8 +174,8 @@ public class DangerReportController : ControllerBase
         }
     }
 
-    [HttpGet("GetReportsByImportance")]
-    public async Task<ActionResult> GetReportsByImportance(int pageNumber, int itemsPerPage, string culture)
+    [HttpGet("GetDisastersByMunicipalityAndImportance")]
+    public async Task<ActionResult> GetDisastersByMunicipalityAndImportance(int pageNumber, int itemsPerPage, string culture)
     {
         try
         {
@@ -190,6 +194,7 @@ public class DangerReportController : ControllerBase
                     DisasterType = culture.ToLower().Equals("en-us") 
                         ? group.Key.DisasterType.ToString()
                         : DisasterConverter.TranslateDisaster(group.Key.DisasterType, culture), 
+                    DisasterTypeIndex = (int)group.Key.DisasterType,
                     Country = group.Key.Country, 
                     Municipality = group.Key.Municipality, 
                     Importance = group.Count()
@@ -204,6 +209,45 @@ public class DangerReportController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "An error occurred while trying to fetch reports by importance");
+            return BadRequest();
+        }
+    }
+
+    [HttpGet("GetActiveReportsByDisasterAndMunicipality")]
+    public async Task<ActionResult> GetActiveReportsByDisasterAndMunicipality(int disasterIndex, string municipality, string culture)
+    {
+        try
+        {
+            // TODO: Include disasterIndex in the other DTO
+            string rootPath = $"{Request.Scheme}://{Request.Host}{Request.PathBase}";
+            var imagesPath = $@"{rootPath}/UploadDangerReportImages";
+
+            var reports = await _dbContext.ActiveDangerReports
+                .AsNoTracking()
+                .Where(activeReport => 
+                    (int)activeReport.DangerReport.DisasterType == disasterIndex &&
+                    activeReport.DangerReport.CoordinatesInformation.Any(ci => ci.Municipality.Equals(municipality)))
+                .Select(activeReport => new CivilProtectionDangerReportDTO
+                {
+                    Id = activeReport.DangerReportId,
+                    DisasterType = culture.ToLower().Equals("en-us")
+                        ? activeReport.DangerReport.DisasterType.ToString()
+                        : DisasterConverter.TranslateDisaster(activeReport.DangerReport.DisasterType, culture), 
+                    Longitude = activeReport.DangerReport.Location.X,
+                    Latitude = activeReport.DangerReport.Location.Y,
+                    CreatedAt = activeReport.DangerReport.CreatedAt,
+                    ImageUrl = activeReport.DangerReport.ImageName != null ? 
+                        $@"{imagesPath}/{activeReport.DangerReport.ImageName}" : 
+                        null,
+                    Description = activeReport.DangerReport.Description,
+                })
+                .ToListAsync();
+
+            return Ok(reports);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "An error occurred while trying to fetch reports by disaster and municipality");
             return BadRequest();
         }
     }
