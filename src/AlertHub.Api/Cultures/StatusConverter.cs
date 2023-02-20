@@ -21,11 +21,11 @@ public class StatusConverter
 
     public static string TranslateStatus(ReportStatus reportStatus, string culture)
     {
-        switch (culture)
+        switch (culture.ToLower())
         {
-            case "en-US":
+            case "en-us":
                 return DisasterTypesEnglish[reportStatus];
-            case "el-GR":
+            case "el-gr":
                 return DisasterTypesGreek[reportStatus];
         }
 

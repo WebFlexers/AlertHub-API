@@ -149,7 +149,7 @@ public class DangerReportController : ControllerBase
                 })
                 .ToListAsync();
 
-            if (culture.Equals("en-US")) return Ok(reports);
+            if (culture.ToLower().Equals("en-us")) return Ok(reports);
 
             foreach (var report in reports)
             {
@@ -173,17 +173,39 @@ public class DangerReportController : ControllerBase
     [HttpGet("GetReportsByImportance")]
     public async Task<ActionResult> GetReportsByImportance(int pageNumber, int itemsPerPage, string culture)
     {
-        var reports = await _dbContext.CoordinatesInformation
-            .AsNoTracking()
-            .Where(ci => ci.DangerReport.ActiveDangerReport.DangerReportId.Equals(ci.DangerReportId))
-            .Where(ci => ci.Culture.Equals(culture))
-            .GroupBy(ci => new { ci.Municipality })
-            .Select(group => new { Municipality = group.Key.Municipality ,Importance = group.Count(), DangerReports = group.ToList() })
-            .OrderByDescending(group => group.Importance)
-            .Paginate(pageNumber, itemsPerPage)
-            .ToListAsync();
+        try
+        {
+            var reports = await _dbContext.CoordinatesInformation
+                .AsNoTracking()
+                .Where(ci => ci.DangerReport.ActiveDangerReport.DangerReportId.Equals(ci.DangerReportId) &&
+                                                ci.Culture.Equals(culture))
+                .GroupBy(ci => new
+                {
+                    ci.Country, 
+                    ci.Municipality,
+                    ci.DangerReport.DisasterType
+                })
+                .Select(group => new 
+                { 
+                    DisasterType = culture.ToLower().Equals("en-us") 
+                        ? group.Key.DisasterType.ToString()
+                        : DisasterConverter.TranslateDisaster(group.Key.DisasterType, culture), 
+                    Country = group.Key.Country, 
+                    Municipality = group.Key.Municipality, 
+                    Importance = group.Count()
 
-        return Ok(reports);
+                })
+                .OrderByDescending(group => group.Importance)
+                .Paginate(pageNumber, itemsPerPage)
+                .ToListAsync();
+
+            return Ok(reports);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "An error occurred while trying to fetch reports by importance");
+            return BadRequest();
+        }
     }
 
     private async Task UploadImage(string imageName, IFormFile imageFile, CancellationToken cancellationToken)

@@ -28,11 +28,11 @@ public static class DisasterConverter
 
     public static string TranslateDisaster(DisasterType disasterType, string culture)
     {
-        switch (culture)
+        switch (culture.ToLower())
         {
-            case "en-US":
+            case "en-us":
                 return DisasterTypesEnglish[disasterType];
-            case "el-GR":
+            case "el-gr":
                 return DisasterTypesGreek[disasterType];
         }
 
