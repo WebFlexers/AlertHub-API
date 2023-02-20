@@ -37,7 +37,7 @@ public class DangerReportController : ControllerBase
         _environment = environment;
         _httpClientFactory = httpClientFactory;
     }
-    // TODO: Check if the user is civil protection for the roles that matter
+
     [HttpPost]
     public async Task<ActionResult> Post([FromForm]CreateDangerReportDTO dangerReportDTO, CancellationToken cancellationToken)
     {
@@ -354,6 +354,86 @@ public class DangerReportController : ControllerBase
         {
             _logger.LogError(ex, "An exception occurred while fetching paginated " +
                                  "approved archived danger reports sorted by time descending");
+            return BadRequest();
+        }
+    }
+
+    [Authorize(Roles = "Civil_Protection")]
+    [HttpPost("RejectDangerReportsByDisasterAndMunicipality")]
+    public async Task<IActionResult> RejectDangerReportsByDisasterAndMunicipality(int disasterIndex, string municipality, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _dbContext.Database.BeginTransactionAsync(cancellationToken);
+
+            var activeReports = await _dbContext.ActiveDangerReports
+                .Where(activeReport =>
+                    (int)activeReport.DangerReport.DisasterType == disasterIndex &&
+                    activeReport.DangerReport.CoordinatesInformation.Any(ci => ci.Municipality.Equals(municipality)))
+                .Include(adr => adr.DangerReport)
+                .ToListAsync(cancellationToken);
+
+            foreach (var activeReport in activeReports)
+            {
+                activeReport.DangerReport.Status = ReportStatus.Rejected;
+                await _dbContext.ArchivedDangerReports.AddAsync(new ArchivedDangerReport
+                {
+                    DangerReportId = activeReport.DangerReportId,
+                }, cancellationToken);
+                _dbContext.ActiveDangerReports.Remove(activeReport);
+            }
+
+            await _dbContext.SaveChangesAsync(cancellationToken);
+
+            await _dbContext.Database.CommitTransactionAsync(cancellationToken);
+
+            return Ok();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "An error occurred while trying to reject reports of {disaster} in municipality {municipality}",
+                Enum.GetName(typeof(DisasterType), disasterIndex), municipality);
+            await _dbContext.Database.RollbackTransactionAsync(cancellationToken);
+            return BadRequest();
+        }
+    }
+
+    [Authorize(Roles = "Civil_Protection")]
+    [HttpPost("ApproveDangerReportsByDisasterAndMunicipality")]
+    public async Task<IActionResult> ApproveDangerReportsByDisasterAndMunicipality(int disasterIndex, string municipality, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _dbContext.Database.BeginTransactionAsync(cancellationToken);
+
+            var activeReports = await _dbContext.ActiveDangerReports
+                .Where(activeReport =>
+                    (int)activeReport.DangerReport.DisasterType == disasterIndex &&
+                    activeReport.DangerReport.CoordinatesInformation.Any(ci => ci.Municipality.Equals(municipality)))
+                .Include(adr => adr.DangerReport)
+                .ToListAsync(cancellationToken);
+
+            foreach (var activeReport in activeReports)
+            {
+                activeReport.DangerReport.Status = ReportStatus.Approved;
+                await _dbContext.ArchivedDangerReports.AddAsync(new ArchivedDangerReport
+                {
+                    DangerReportId = activeReport.DangerReportId,
+                }, cancellationToken);
+                _dbContext.ActiveDangerReports.Remove(activeReport);
+            }
+
+            await _dbContext.SaveChangesAsync(cancellationToken);
+
+            await _dbContext.Database.CommitTransactionAsync(cancellationToken);
+
+            return Ok();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "An error occurred while trying to reject reports of {disaster} in municipality {municipality}",
+                Enum.GetName(typeof(DisasterType), disasterIndex), municipality);
+            await _dbContext.Database.RollbackTransactionAsync(cancellationToken);
             return BadRequest();
         }
     }
