@@ -13,7 +13,7 @@ using NetTopologySuite.Geometries;
 namespace AlertHub.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20230219233802_CreateSchema")]
+    [Migration("20230220215109_CreateSchema")]
     partial class CreateSchema
     {
         /// <inheritdoc />
@@ -185,6 +185,30 @@ namespace AlertHub.Data.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("DangerReports");
+                });
+
+            modelBuilder.Entity("AlertHub.Data.Entities.UserFcmDeviceId", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("DeviceId")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("UserFcmDeviceIds");
                 });
 
             modelBuilder.Entity("AlertHub.Data.Entities.UserLocation", b =>
@@ -442,6 +466,17 @@ namespace AlertHub.Data.Migrations
                 });
 
             modelBuilder.Entity("AlertHub.Data.Entities.DangerReport", b =>
+                {
+                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("AlertHub.Data.Entities.UserFcmDeviceId", b =>
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", "User")
                         .WithMany()

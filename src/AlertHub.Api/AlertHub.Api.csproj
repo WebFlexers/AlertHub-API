@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <PackageReference Include="AspNetCore.HealthChecks.SqlServer" Version="6.0.2" />
+    <PackageReference Include="CorePush" Version="3.1.1" />
     <PackageReference Include="Hangfire" Version="1.7.33" />
     <PackageReference Include="Hangfire.Core" Version="1.7.33" />
     <PackageReference Include="Hangfire.SqlServer" Version="1.7.33" />

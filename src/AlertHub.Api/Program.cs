@@ -1,5 +1,10 @@
+using System.Configuration;
 using AlertHub.Api.Extensions;
+using AlertHub.Api.Models.FCM;
+using AlertHub.Api.Services;
 using AlertHub.Data;
+using CorePush.Apple;
+using CorePush.Google;
 using Hangfire;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
@@ -18,7 +23,7 @@ builder.Services.AddCors(options =>
     options.AddPolicy(name: myAllowSpecificOrigins,
     policy =>
     {
-      policy.WithOrigins("http://localhost:3000")
+      policy.AllowAnyOrigin()
         .AllowAnyHeader()
         .AllowAnyMethod();
     });
@@ -39,6 +44,15 @@ GlobalConfiguration.Configuration.UseSerializerSettings(new JsonSerializerSettin
 var connectionString = builder.Configuration.GetValue<string>("ConnectionStrings:Default");
 builder.Services.AddHangfire(x => x.UseSqlServerStorage(connectionString));
 builder.Services.AddHangfireServer();
+
+builder.Services.AddTransient<INotificationService, NotificationService>();
+builder.Services.AddHttpClient<FcmSender>();
+builder.Services.AddHttpClient<ApnSender>();
+
+// Configure strongly typed settings objects
+var fcmSettingsSection = builder.Configuration.GetSection("FcmNotification");
+builder.Services.Configure<FcmNotificationSettings>(fcmSettingsSection);
+
 
 var app = builder.Build();
 

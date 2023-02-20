@@ -1,11 +1,9 @@
-﻿using System;
-using System.Reflection;
-using AlertHub.Data.Entities;
+﻿using AlertHub.Data.Entities;
 using AlertHub.Data.Seeding;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using System.Reflection;
 
 namespace AlertHub.Data;
 
@@ -32,4 +30,5 @@ public class ApplicationDbContext : IdentityDbContext<IdentityUser, IdentityRole
     public DbSet<DangerReport> DangerReports { get; set; }
     public DbSet<CoordinatesInformation> CoordinatesInformation { get; set; }
     public DbSet<UserLocation> UserLocations { get; set; }
+    public DbSet<UserFcmDeviceId> UserFcmDeviceIds { get; set; }
 }

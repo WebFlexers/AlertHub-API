@@ -57,6 +57,26 @@ namespace AlertHub.Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "UserFcmDeviceIds",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    DeviceId = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
+                    UserId = table.Column<string>(type: "nvarchar(450)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_UserFcmDeviceIds", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_UserFcmDeviceIds_AspNetUsers_UserId",
+                        column: x => x.UserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "UserLocations",
                 columns: table => new
                 {
@@ -179,6 +199,11 @@ namespace AlertHub.Data.Migrations
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_UserFcmDeviceIds_UserId",
+                table: "UserFcmDeviceIds",
+                column: "UserId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_UserLocations_UserId",
                 table: "UserLocations",
                 column: "UserId");
@@ -198,6 +223,9 @@ namespace AlertHub.Data.Migrations
 
             migrationBuilder.DropTable(
                 name: "DangerNotifications");
+
+            migrationBuilder.DropTable(
+                name: "UserFcmDeviceIds");
 
             migrationBuilder.DropTable(
                 name: "UserLocations");
