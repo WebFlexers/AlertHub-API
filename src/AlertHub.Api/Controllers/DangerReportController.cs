@@ -41,7 +41,7 @@ public class DangerReportController : ControllerBase
         _environment = environment;
         _httpClientFactory = httpClientFactory;
     }
-
+    // TODO: Check if the user is civil protection for the roles that matter
     [HttpPost]
     public async Task<ActionResult> Post([FromForm]CreateDangerReportDTO dangerReportDTO, CancellationToken cancellationToken)
     {
@@ -218,7 +218,6 @@ public class DangerReportController : ControllerBase
     {
         try
         {
-            // TODO: Include disasterIndex in the other DTO
             string rootPath = $"{Request.Scheme}://{Request.Host}{Request.PathBase}";
             var imagesPath = $@"{rootPath}/UploadDangerReportImages";
 
@@ -248,6 +247,96 @@ public class DangerReportController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "An error occurred while trying to fetch reports by disaster and municipality");
+            return BadRequest();
+        }
+    }
+
+    [HttpGet("GetRejectedDangerReportsByTimeDescending")]
+    public async Task<ActionResult> GetRejectedDangerReportsByTimeDescending(int pageNumber, int itemsPerPage, string culture)
+    {
+        try
+        {
+            var reports = await _dbContext.ArchivedDangerReports
+                .AsNoTracking()
+                .Where(adr => adr.DangerReport.Status == ReportStatus.Rejected)
+                .OrderByDescending(activeReport => activeReport.DangerReport.CreatedAt)
+                .Paginate(pageNumber, itemsPerPage)
+                .Select(activeReport => new ArchivedDangerReportDTO()
+                {
+                    Id = activeReport.DangerReportId,
+                    DisasterType = activeReport.DangerReport.DisasterType.ToString(),
+                    Longitude = activeReport.DangerReport.Location.X,
+                    Latitude = activeReport.DangerReport.Location.Y,
+                    CreatedAt = activeReport.DangerReport.CreatedAt,
+                    Country = activeReport.DangerReport.CoordinatesInformation
+                        .GetCountryByCulture(culture, activeReport.DangerReportId, activeReport.DangerReport.CoordinatesInformation),
+                    Municipality = activeReport.DangerReport.CoordinatesInformation
+                        .GetMunicipalityByCulture(culture, activeReport.DangerReportId, activeReport.DangerReport.CoordinatesInformation),
+                })
+                .ToListAsync();
+
+            if (culture.ToLower().Equals("en-us"))
+            {
+                return Ok(reports);
+            }
+
+            foreach (var report in reports)
+            {
+                report.DisasterType = DisasterConverter.TranslateDisaster(
+                    Enum.Parse<DisasterType>(report.DisasterType), culture);
+            }
+
+            return Ok(reports);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "An exception occurred while fetching paginated " +
+                                 "rejected archived danger reports sorted by time descending");
+            return BadRequest();
+        }
+    }
+
+    [HttpGet("GetApprovedDangerReportsByTimeDescending")]
+    public async Task<ActionResult> GetApprovedDangerReportsByTimeDescending(int pageNumber, int itemsPerPage, string culture)
+    {
+        try
+        {
+            var reports = await _dbContext.ArchivedDangerReports
+                .AsNoTracking()
+                .Where(adr => adr.DangerReport.Status == ReportStatus.Approved)
+                .OrderByDescending(activeReport => activeReport.DangerReport.CreatedAt)
+                .Paginate(pageNumber, itemsPerPage)
+                .Select(activeReport => new ArchivedDangerReportDTO()
+                {
+                    Id = activeReport.DangerReportId,
+                    DisasterType = activeReport.DangerReport.DisasterType.ToString(),
+                    Longitude = activeReport.DangerReport.Location.X,
+                    Latitude = activeReport.DangerReport.Location.Y,
+                    CreatedAt = activeReport.DangerReport.CreatedAt,
+                    Country = activeReport.DangerReport.CoordinatesInformation
+                        .GetCountryByCulture(culture, activeReport.DangerReportId, activeReport.DangerReport.CoordinatesInformation),
+                    Municipality = activeReport.DangerReport.CoordinatesInformation
+                        .GetMunicipalityByCulture(culture, activeReport.DangerReportId, activeReport.DangerReport.CoordinatesInformation),
+                })
+                .ToListAsync();
+
+            if (culture.ToLower().Equals("en-us"))
+            {
+                return Ok(reports);
+            }
+
+            foreach (var report in reports)
+            {
+                report.DisasterType = DisasterConverter.TranslateDisaster(
+                    Enum.Parse<DisasterType>(report.DisasterType), culture);
+            }
+
+            return Ok(reports);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "An exception occurred while fetching paginated " +
+                                 "approved danger reports sorted by time descending");
             return BadRequest();
         }
     }
