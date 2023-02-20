@@ -15,9 +15,16 @@ public class DangerNotificationConfig : IEntityTypeConfiguration<DangerNotificat
         builder.Property(dn => dn.CreatedAt)
             .IsRequired(true);
 
-        builder.Property(dn => dn.Culture)
+        builder.Property(dn => dn.DisasterType)
+            .IsRequired(true);
+
+        builder.Property(dn => dn.Country)
             .IsRequired(true)
-            .HasMaxLength(10);
+            .HasMaxLength(450);
+
+        builder.Property(dn => dn.Municipality)
+            .IsRequired(true)
+            .HasMaxLength(450);
 
         builder.Property(dn => dn.Directions)
             .IsRequired(true)

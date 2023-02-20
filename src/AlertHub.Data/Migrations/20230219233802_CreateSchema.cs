@@ -20,7 +20,9 @@ namespace AlertHub.Data.Migrations
                         .Annotation("SqlServer:Identity", "1, 1"),
                     Location = table.Column<Point>(type: "geography", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    Culture = table.Column<string>(type: "nvarchar(10)", maxLength: 10, nullable: false),
+                    DisasterType = table.Column<int>(type: "int", nullable: false),
+                    Country = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: false),
+                    Municipality = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: false),
                     Directions = table.Column<string>(type: "nvarchar(max)", nullable: false)
                 },
                 constraints: table =>
@@ -37,7 +39,7 @@ namespace AlertHub.Data.Migrations
                     DisasterType = table.Column<int>(type: "int", nullable: false),
                     Location = table.Column<Point>(type: "geography", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    ImageName = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    ImageName = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
                     Description = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: true),
                     Status = table.Column<int>(type: "int", nullable: false),
                     Culture = table.Column<string>(type: "nvarchar(10)", maxLength: 10, nullable: false),
@@ -137,12 +139,14 @@ namespace AlertHub.Data.Migrations
             migrationBuilder.CreateIndex(
                 name: "IX_ActiveDangerReports_DangerReportId",
                 table: "ActiveDangerReports",
-                column: "DangerReportId");
+                column: "DangerReportId",
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_ArchivedDangerReports_DangerReportId",
                 table: "ArchivedDangerReports",
-                column: "DangerReportId");
+                column: "DangerReportId",
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_CoordinatesInformation_Country",

@@ -13,7 +13,7 @@ using NetTopologySuite.Geometries;
 namespace AlertHub.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20230218164236_CreateSchema")]
+    [Migration("20230219233802_CreateSchema")]
     partial class CreateSchema
     {
         /// <inheritdoc />
@@ -39,7 +39,8 @@ namespace AlertHub.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("DangerReportId");
+                    b.HasIndex("DangerReportId")
+                        .IsUnique();
 
                     b.ToTable("ActiveDangerReports");
                 });
@@ -57,7 +58,8 @@ namespace AlertHub.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("DangerReportId");
+                    b.HasIndex("DangerReportId")
+                        .IsUnique();
 
                     b.ToTable("ArchivedDangerReports");
                 });
@@ -109,21 +111,29 @@ namespace AlertHub.Data.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("Country")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
-
-                    b.Property<string>("Culture")
-                        .IsRequired()
-                        .HasMaxLength(10)
-                        .HasColumnType("nvarchar(10)");
 
                     b.Property<string>("Directions")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int>("DisasterType")
+                        .HasColumnType("int");
+
                     b.Property<Point>("Location")
                         .IsRequired()
                         .HasColumnType("geography");
+
+                    b.Property<string>("Municipality")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
 
@@ -154,8 +164,8 @@ namespace AlertHub.Data.Migrations
                         .HasColumnType("int");
 
                     b.Property<string>("ImageName")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
 
                     b.Property<Point>("Location")
                         .IsRequired()
@@ -401,8 +411,8 @@ namespace AlertHub.Data.Migrations
             modelBuilder.Entity("AlertHub.Data.Entities.ActiveDangerReport", b =>
                 {
                     b.HasOne("AlertHub.Data.Entities.DangerReport", "DangerReport")
-                        .WithMany()
-                        .HasForeignKey("DangerReportId")
+                        .WithOne("ActiveDangerReport")
+                        .HasForeignKey("AlertHub.Data.Entities.ActiveDangerReport", "DangerReportId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -412,8 +422,8 @@ namespace AlertHub.Data.Migrations
             modelBuilder.Entity("AlertHub.Data.Entities.ArchivedDangerReport", b =>
                 {
                     b.HasOne("AlertHub.Data.Entities.DangerReport", "DangerReport")
-                        .WithMany()
-                        .HasForeignKey("DangerReportId")
+                        .WithOne("ArchivedDangerReport")
+                        .HasForeignKey("AlertHub.Data.Entities.ArchivedDangerReport", "DangerReportId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -506,6 +516,10 @@ namespace AlertHub.Data.Migrations
 
             modelBuilder.Entity("AlertHub.Data.Entities.DangerReport", b =>
                 {
+                    b.Navigation("ActiveDangerReport");
+
+                    b.Navigation("ArchivedDangerReport");
+
                     b.Navigation("CoordinatesInformation");
                 });
 #pragma warning restore 612, 618
