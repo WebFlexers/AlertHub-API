@@ -43,6 +43,7 @@ public class DangerNotificationController : ControllerBase
                 .ToListAsync();
 
             var isAtLeastOneNotificationSent = false;
+            var utcNow = DateTime.UtcNow;
 
             foreach (var userLocation in nearbyUserLocations)
             {
@@ -57,8 +58,8 @@ public class DangerNotificationController : ControllerBase
 
                 await _notificationService.SendNotificationAsync(new NotificationModel
                 {
-                    Title = $"There is a {notificationDTO.DisasterType} near you! Run.",
-                    Body = notificationDTO.Directions,
+                    Title = $"There is a {notificationDTO.DisasterType.ToLower()} in {notificationDTO.Municipality}! Run.",
+                    Body = $"{notificationDTO.Directions}\nSent at {utcNow.ToString("F")}",
                     DeviceId = userFcm.DeviceId,
                     IsAndroidDevice = true
                 });
