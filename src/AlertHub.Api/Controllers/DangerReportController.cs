@@ -1,23 +1,18 @@
-﻿using AlertHub.Api.Extensions;
+﻿using AlertHub.Api.Cultures;
+using AlertHub.Api.Extensions;
+using AlertHub.Api.Models;
 using AlertHub.Data;
 using AlertHub.Data.DTOs;
 using AlertHub.Data.Entities;
 using AlertHub.Data.Entities.Enums;
 using FluentValidation;
-using Microsoft.AspNetCore.Authorization;
+using Hangfire;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using NetTopologySuite;
 using NetTopologySuite.Geometries;
-using System.Composition;
 using System.Globalization;
-using AlertHub.Api.Models;
-using System.Net.Http;
-using System.Security.Policy;
 using System.Text.Json;
-using AlertHub.Api.Cultures;
-using Hangfire;
-using System.Text.RegularExpressions;
 
 namespace AlertHub.Api.Controllers;
 [Route("api/[controller]")]
@@ -125,7 +120,7 @@ public class DangerReportController : ControllerBase
             string rootPath = $"{Request.Scheme}://{Request.Host}{Request.PathBase}";
             var imagesPath = $@"{rootPath}/UploadDangerReportImages";
 
-            var reports = await _dbContext.ActiveDangerReports
+            var paginatedReports = await _dbContext.ActiveDangerReports
                 .AsNoTracking()
                 .OrderByDescending(activeReport => activeReport.DangerReport.CreatedAt)
                 .Paginate(pageNumber, itemsPerPage)
@@ -152,10 +147,10 @@ public class DangerReportController : ControllerBase
 
             if (culture.ToLower().Equals("en-us"))
             {
-                return Ok(reports);
+                return Ok(paginatedReports);
             }
 
-            foreach (var report in reports)
+            foreach (var report in paginatedReports)
             {
                 report.DisasterType = DisasterConverter.TranslateDisaster(
                     Enum.Parse<DisasterType>(report.DisasterType), culture);
@@ -164,7 +159,7 @@ public class DangerReportController : ControllerBase
                     Enum.Parse<ReportStatus>(report.Status), culture);
             }
 
-            return Ok(reports);
+            return Ok(paginatedReports);
         }
         catch (Exception ex)
         {
@@ -179,16 +174,21 @@ public class DangerReportController : ControllerBase
     {
         try
         {
-            var reports = await _dbContext.CoordinatesInformation
+            var reportsQuery = _dbContext.CoordinatesInformation
                 .AsNoTracking()
                 .Where(ci => ci.DangerReport.ActiveDangerReport.DangerReportId.Equals(ci.DangerReportId) &&
-                                                ci.Culture.Equals(culture))
+                             ci.Culture.Equals(culture))
                 .GroupBy(ci => new
                 {
-                    ci.Country, 
+                    ci.Country,
                     ci.Municipality,
                     ci.DangerReport.DisasterType
-                })
+                });
+
+            var count = await reportsQuery.CountAsync();
+            var totalNumberOfPages = (int)Math.Ceiling((double)count / itemsPerPage);
+
+            var paginatedReports = await reportsQuery
                 .Select(group => new 
                 { 
                     DisasterType = culture.ToLower().Equals("en-us") 
@@ -204,7 +204,7 @@ public class DangerReportController : ControllerBase
                 .Paginate(pageNumber, itemsPerPage)
                 .ToListAsync();
 
-            return Ok(reports);
+            return Ok(new {TotalPages = totalNumberOfPages, DangerReports = paginatedReports});
         }
         catch (Exception ex)
         {
@@ -256,10 +256,16 @@ public class DangerReportController : ControllerBase
     {
         try
         {
-            var reports = await _dbContext.ArchivedDangerReports
+            var reportsQuery = _dbContext.ArchivedDangerReports
                 .AsNoTracking()
                 .Where(adr => adr.DangerReport.Status == ReportStatus.Rejected)
-                .OrderByDescending(activeReport => activeReport.DangerReport.CreatedAt)
+                .OrderByDescending(activeReport => activeReport.DangerReport.CreatedAt);
+
+            var count = await reportsQuery.CountAsync();
+            var totalNumberOfPages = (int)Math.Ceiling((double)count / itemsPerPage);
+
+            var paginatedReports = await reportsQuery
+                .AsNoTracking()
                 .Paginate(pageNumber, itemsPerPage)
                 .Select(activeReport => new ArchivedDangerReportDTO()
                 {
@@ -277,16 +283,16 @@ public class DangerReportController : ControllerBase
 
             if (culture.ToLower().Equals("en-us"))
             {
-                return Ok(reports);
+                return Ok(new {TotalPages = totalNumberOfPages, DangerReports = paginatedReports});
             }
 
-            foreach (var report in reports)
+            foreach (var report in paginatedReports)
             {
                 report.DisasterType = DisasterConverter.TranslateDisaster(
                     Enum.Parse<DisasterType>(report.DisasterType), culture);
             }
 
-            return Ok(reports);
+            return Ok(new {TotalPages = totalNumberOfPages, DangerReports = paginatedReports});
         }
         catch (Exception ex)
         {
@@ -301,10 +307,16 @@ public class DangerReportController : ControllerBase
     {
         try
         {
-            var reports = await _dbContext.ArchivedDangerReports
+            var reportsQuery = _dbContext.ArchivedDangerReports
                 .AsNoTracking()
                 .Where(adr => adr.DangerReport.Status == ReportStatus.Approved)
-                .OrderByDescending(activeReport => activeReport.DangerReport.CreatedAt)
+                .OrderByDescending(activeReport => activeReport.DangerReport.CreatedAt);
+
+            var count = await reportsQuery.CountAsync();
+            var totalNumberOfPages = (int)Math.Ceiling((double)count / itemsPerPage);
+
+            var paginatedReports = await reportsQuery
+                .AsNoTracking()
                 .Paginate(pageNumber, itemsPerPage)
                 .Select(activeReport => new ArchivedDangerReportDTO()
                 {
@@ -322,21 +334,21 @@ public class DangerReportController : ControllerBase
 
             if (culture.ToLower().Equals("en-us"))
             {
-                return Ok(reports);
+                return Ok(new {TotalPages = totalNumberOfPages, DangerReports = paginatedReports});
             }
 
-            foreach (var report in reports)
+            foreach (var report in paginatedReports)
             {
                 report.DisasterType = DisasterConverter.TranslateDisaster(
                     Enum.Parse<DisasterType>(report.DisasterType), culture);
             }
 
-            return Ok(reports);
+            return Ok(new {TotalPages = totalNumberOfPages, DangerReports = paginatedReports});
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "An exception occurred while fetching paginated " +
-                                 "approved danger reports sorted by time descending");
+                                 "approved archived danger reports sorted by time descending");
             return BadRequest();
         }
     }
