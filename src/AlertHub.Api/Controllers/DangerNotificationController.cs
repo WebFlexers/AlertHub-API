@@ -2,6 +2,7 @@
 using AlertHub.Data.DTOs;
 using AlertHub.Data.Entities;
 using AlertHub.Data.Entities.Enums;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using NetTopologySuite;
@@ -21,6 +22,7 @@ public class DangerNotificationController : ControllerBase
         _dbContext = dbContext;
     }
 
+    [Authorize(Roles = "Civil_Protection")]
     [HttpPost]
     public async Task<IActionResult> CreateAndSendNotification([FromBody] CreateNotificationDTO notificationDTO)
     {

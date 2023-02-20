@@ -13,6 +13,7 @@ using NetTopologySuite;
 using NetTopologySuite.Geometries;
 using System.Globalization;
 using System.Text.Json;
+using Microsoft.AspNetCore.Authorization;
 
 namespace AlertHub.Api.Controllers;
 [Route("api/[controller]")]
@@ -169,6 +170,7 @@ public class DangerReportController : ControllerBase
         }
     }
 
+    [Authorize(Roles = "Civil_Protection")]
     [HttpGet("GetDisastersByMunicipalityAndImportance")]
     public async Task<ActionResult> GetDisastersByMunicipalityAndImportance(int pageNumber, int itemsPerPage, string culture)
     {
@@ -213,6 +215,7 @@ public class DangerReportController : ControllerBase
         }
     }
 
+    [Authorize(Roles = "Civil_Protection")]
     [HttpGet("GetActiveReportsByDisasterAndMunicipality")]
     public async Task<ActionResult> GetActiveReportsByDisasterAndMunicipality(int disasterIndex, string municipality, string culture)
     {
@@ -251,6 +254,7 @@ public class DangerReportController : ControllerBase
         }
     }
 
+    [Authorize(Roles = "Civil_Protection")]
     [HttpGet("GetRejectedDangerReportsByTimeDescending")]
     public async Task<ActionResult> GetRejectedDangerReportsByTimeDescending(int pageNumber, int itemsPerPage, string culture)
     {
@@ -302,6 +306,7 @@ public class DangerReportController : ControllerBase
         }
     }
 
+    [Authorize(Roles = "Civil_Protection")]
     [HttpGet("GetApprovedDangerReportsByTimeDescending")]
     public async Task<ActionResult> GetApprovedDangerReportsByTimeDescending(int pageNumber, int itemsPerPage, string culture)
     {

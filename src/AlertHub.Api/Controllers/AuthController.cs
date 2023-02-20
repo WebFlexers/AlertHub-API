@@ -72,7 +72,7 @@ public class AuthController : ControllerBase
 
             await _userManager.AddToRoleAsync(user, "SIMPLE_USER");
 
-            var token = GenerateToken(user);
+            var token = await GenerateToken(user);
 
             return Ok(new {succeeded = true, token = token});
         }
@@ -101,11 +101,13 @@ public class AuthController : ControllerBase
             return Unauthorized();
         }
 
-        return Ok(GenerateToken(user));
+        var token = await GenerateToken(user);
+
+        return Ok(token);
     }
 
 
-    private string GenerateToken(IdentityUser userAccount)
+    private async Task<string> GenerateToken(IdentityUser userAccount)
     {
         var secretKey = new SymmetricSecurityKey(
             Encoding.ASCII.GetBytes(
@@ -113,12 +115,20 @@ public class AuthController : ControllerBase
 
         var signingCredentials = new SigningCredentials(secretKey, SecurityAlgorithms.HmacSha256);
 
-        List<Claim> claims = new List<Claim>
+        var claims = new List<Claim>
         {
             new(JwtRegisteredClaimNames.Sub, userAccount.Id),
             new(JwtRegisteredClaimNames.Email, userAccount.Email!),
             new(JwtRegisteredClaimNames.UniqueName, userAccount.UserName!),
         };
+
+        var userRoles = await _userManager.GetRolesAsync(userAccount);
+        var firstRole = userRoles.FirstOrDefault();
+
+        if (firstRole != null)
+        {
+            claims.Add(new Claim(ClaimTypes.Role, firstRole));
+        }
 
         var token = new JwtSecurityToken(
             issuer: _config.GetValue<string>("Authentication:Issuer"),
