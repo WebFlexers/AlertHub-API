@@ -245,6 +245,12 @@ public class DangerReportController : ControllerBase
                 return BadRequest("Wrong id");
             }
 
+            report.DisasterType = DisasterConverter.TranslateDisaster(
+                Enum.Parse<DisasterType>(report.DisasterType), culture);
+
+            report.Status = StatusConverter.TranslateStatus(
+                Enum.Parse<ReportStatus>(report.Status), culture);
+
             return Ok(report);
         }
         catch (Exception ex)
@@ -574,7 +580,7 @@ public class DangerReportController : ControllerBase
         {
             _logger.LogError(ex, "An error occurred while trying to reject reports of {disaster} in municipality {municipality}",
                 Enum.GetName(typeof(DisasterType), disasterIndex), municipality);
-            await _dbContext.Database.RollbackTransactionAsync(cancellationToken);
+            await _dbContext.Database.RollbackTransactionAsync(CancellationToken.None);
             return BadRequest();
         }
     }
