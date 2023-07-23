@@ -1,7 +1,7 @@
 # AlertHub-API
 Here lives the API that powers the AlertHub mobile app and the admin web page.
 
-AlertHub is a mobile application that informs registered users and also other stakeholders about emergency situations, such as fires, tornadoes, hailstorms, etc. 
+AlertHub is a mobile application that informs registered users about emergency situations, such as fires, tornadoes, hailstorms, etc. 
 The notification is done through a text message to a set of recipients (if certain criteria are met). Each notification includes the emergency situation (with any information
 the geographical location of the current event, a timestamp (date/time), and instructions from the civil protection.
 
