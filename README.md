@@ -7,7 +7,13 @@ the geographical location of the current event, a timestamp (date/time), and ins
 
 <br/>
 
-The management of the application is done by admins through a web portal made in Next .Js
+The management of the application is done by civil protection employees through a web portal made in Next .Js
+
+<br/>
+
+Alerthub Android Client repository: https://github.com/WebFlexers/AlertHub-Android
+
+Alerthub NextJs Admin repository: https://github.com/WebFlexers/AlertHub-CivilProtection-Client
 
 ## Documentation
 
